@@ -1,0 +1,62 @@
+scalar Any
+
+type User {
+  ID: ID! 
+  Email : String!
+  Password : String!
+  FirstName : String!
+  LastName : String!
+  MidName : String!
+
+  IsActive : Boolean!
+  ProfilePhoto : String!
+  BackgroundPhoto : String!
+  Headline : String!
+  Pronoun : String!
+  ProfileLink : String!
+  About : String!
+  Location : String!
+}
+
+# user 1 visit user 2
+type Visit {
+  ID : ID!
+  User1 : User!
+  User2 : User!
+}
+
+# 2 way
+type Connection {
+  ID : ID!
+  User1 : User!
+  User2 : User!
+}
+
+# user 1 follow user 2
+type Follow {
+  ID : ID!
+  User1 : User!
+  User2 : User!
+}
+
+type Query {
+  user(id: ID!): User!
+  login(input : InputLogin!) : Any!
+  register(input : InputRegister) : Any!
+}
+
+input InputLogin {
+  email: String!
+  passowrd: String!
+}
+
+input InputRegister {
+  Email : String!
+  Password : String!
+  FirstName : String!
+  LastName : String!
+  MidName : String!
+}
+
+# extend type Mutation {
+# }

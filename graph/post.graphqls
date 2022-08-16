@@ -1,0 +1,33 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+
+directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+# new directive
+directive @auth on FIELD_DEFINITION
+
+type Post {
+  ID : ID!
+  Text: String!
+  # userId : String!
+  # user: User! @goField(forceResolver: true)
+  # Comment: [Comment!]! @goField(forceResolver: true)
+}
+
+extend type Query {
+  post(id: ID!): Post!
+  posts: [Post!]! @auth
+}
+
+extend type Mutation {
+  createPost(input: InputPost!): Post!
+  updatePost(id: ID!): Post!
+  deletePost(id: ID!): Post!
+}
+
+input InputPost {
+  text: String!
+  userId: String!
+}
