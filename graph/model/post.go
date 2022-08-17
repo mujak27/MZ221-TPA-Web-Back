@@ -4,8 +4,15 @@ package model
 
 
 type Post struct {
-	ID   string `json:"ID"`
-	Text string `json:"Text"`
+	ID     string `gorm:"type:varchar(191)"`
+	Text    string  `json:"Text"`
+	Senders []*User `json:"Senders"   gorm:"many2many:post_senders;"`
+}
+
+type PostSender struct {
+	ID     string `gorm:"type:varchar(191)"`
+	UserId string `json:"UserId" gorm:"type:varchar(191)"`
+	PostId string  `json:"PostId" gorm:"type:varchar(191)"`
 }
 
 type InputPost struct {
@@ -21,7 +28,7 @@ type InputPost struct {
 // }
 
 // type Todo struct {
-// 	ID     string `gorm:"type:varchar(191)"`
+	// ID     string `gorm:"type:varchar(191)"`
 // 	Text   string `json:"text"`
 // 	Done   bool   `json:"done"`
 // 	UserID string `json:"userId"`

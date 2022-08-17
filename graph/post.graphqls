@@ -11,20 +11,24 @@ directive @auth on FIELD_DEFINITION
 type Post {
   ID : ID!
   Text: String!
+  Senders: [User!]! @goField(forceResolver: true)
   # userId : String!
   # user: User! @goField(forceResolver: true)
   # Comment: [Comment!]! @goField(forceResolver: true)
 }
 
 extend type Query {
-  post(id: ID!): Post!
-  posts: [Post!]! @auth
+  Post(id: ID!): Post!
+  Posts: [Post!]! @auth
+  PostsByUserId(id: ID!): [Post!]! @auth
 }
 
 extend type Mutation {
-  createPost(input: InputPost!): Post!
-  updatePost(id: ID!): Post!
-  deletePost(id: ID!): Post!
+  CreatePost(input: InputPost!): Post!
+  UpdatePost(id: ID!): Post!
+  DeletePost(id: ID!): Post!
+
+  AddPostSender(id: ID!): Post!
 }
 
 input InputPost {
