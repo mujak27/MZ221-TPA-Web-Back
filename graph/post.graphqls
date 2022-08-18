@@ -12,8 +12,6 @@ type Post {
   ID : ID!
   Text: String!
   Senders: [User!]! @goField(forceResolver: true)
-  # userId : String!
-  # user: User! @goField(forceResolver: true)
   # Comment: [Comment!]! @goField(forceResolver: true)
 }
 

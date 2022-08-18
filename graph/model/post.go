@@ -2,7 +2,6 @@
 
 package model
 
-
 type Post struct {
 	ID     string `gorm:"type:varchar(191)"`
 	Text    string  `json:"Text"`
@@ -11,9 +10,11 @@ type Post struct {
 
 type PostSender struct {
 	ID     string `gorm:"type:varchar(191)"`
-	UserId string `json:"UserId" gorm:"type:varchar(191)"`
-	PostId string  `json:"PostId" gorm:"type:varchar(191)"`
+	UserId string `json:"UserId" gorm:"reference:User;type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	PostId string `json:"PostId" gorm:"reference:Post;type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
+
+
 
 type InputPost struct {
 	Text   string `json:"text"`

@@ -18,28 +18,22 @@ import (
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.InputPost) (*model.Post, error) {
 	userId := auth.JwtGetValue(ctx).Userid
 
-	fmt.Println("1")
 	post := &model.Post{
 		ID:   uuid.NewString(),
 		Text: input.Text,
 	}
 	r.posts = append(r.posts, post)
 
-	fmt.Println("2")
 	sender := &model.PostSender{
 		ID:     uuid.NewString(),
 		UserId: userId,
 		PostId: post.ID,
 	}
 
-	fmt.Println("3")
 	r.senders = append(r.senders, sender)
 
-	fmt.Println("4")
 	r.DB.Create(post)
 	r.DB.Create(sender)
-
-	fmt.Println("5")
 
 	return post, nil
 }
@@ -76,7 +70,6 @@ func (r *mutationResolver) AddPostSender(ctx context.Context, id string) (*model
 
 // Senders is the resolver for the Senders field.
 func (r *postResolver) Senders(ctx context.Context, obj *model.Post) ([]*model.User, error) {
-
 	var postSenders []*model.PostSender
 	if err := r.DB.Find(&postSenders, obj.Senders).Error; err != nil {
 		return nil, err

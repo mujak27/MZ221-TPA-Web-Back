@@ -1,4 +1,6 @@
+
 scalar Any
+
 
 type User {
   ID: ID! 
@@ -18,36 +20,44 @@ type User {
   Location : String!
 }
 
+type Activation {
+  ID : ID!
+  User : User! @goField(forceResolver: true)
+}
+
 # user 1 visit user 2
 type Visit {
   ID : ID!
-  User1 : User!
-  User2 : User!
+  User1 : User! @goField(forceResolver: true)
+  User2 : User! @goField(forceResolver: true)
 }
 
 # 2 way
 type Connection {
   ID : ID!
-  User1 : User!
-  User2 : User!
+  User1 : User! @goField(forceResolver: true)
+  User2 : User! @goField(forceResolver: true)
 }
 
 # user 1 follow user 2
 type Follow {
   ID : ID!
-  User1 : User!
-  User2 : User!
+  User1 : User! @goField(forceResolver: true)
+  User2 : User! @goField(forceResolver: true)
 }
 
 type Query {
   user(id: ID!): User!
+  UsersByName(name: String): [User!]!
+
   login(input : InputLogin!) : Any!
   register(input : InputRegister) : Any!
+  Activation(id: ID!): Activation!
 }
 
 input InputLogin {
-  email: String!
-  passowrd: String!
+  Email: String!
+  Password: String!
 }
 
 input InputRegister {
@@ -58,5 +68,7 @@ input InputRegister {
   MidName : String!
 }
 
-# extend type Mutation {
-# }
+extend type Mutation {
+  SendActivation(id: ID!): Any!
+  Activate(id: ID!): Any!
+}

@@ -11,6 +11,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/rs/cors v1.8.2
 	github.com/samber/lo v1.27.0
+	github.com/trycourier/courier-go/v2 v2.7.0
 	github.com/vektah/gqlparser/v2 v2.4.6
 	gorm.io/driver/mysql v1.3.5
 	gorm.io/gorm v1.23.8

@@ -56,6 +56,7 @@ func main() {
 	}
 
 	db.AutoMigrate(
+		&model.Activation{},
 		&model.Post{},
 		&model.User{},
 		&model.PostSender{},
@@ -78,7 +79,6 @@ func main() {
 		},
 	})
 
-	router.Handle("/login", http.FileServer(http.Dir("./pages/login")))
 	router.Handle("/",
 		// middleware(
 		playground.Handler("GraphQL playground", "/query"))

@@ -12,8 +12,9 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	posts   []*model.Post
-	users   []*model.User
-	senders []*model.PostSender
-	DB      *gorm.DB
+	activationLinks []*model.Activation
+	posts           []*model.Post
+	users           []*model.User
+	senders         []*model.PostSender
+	DB              *gorm.DB
 }
