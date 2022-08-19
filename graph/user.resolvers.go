@@ -176,7 +176,6 @@ func (r *mutationResolver) AcceptConnectRequest(ctx context.Context, id1 string,
 
 // UnConnect is the resolver for the UnConnect field.
 func (r *mutationResolver) UnConnect(ctx context.Context, id1 string, id2 string) (interface{}, error) {
-
 	id1, id2 = SortIdAsc(id1, id2)
 
 	var connection *model.Connection
@@ -278,7 +277,6 @@ func (r *queryResolver) IsFollow(ctx context.Context, id1 string, id2 string) (b
 
 // IsConnect is the resolver for the IsConnect field.
 func (r *queryResolver) IsConnect(ctx context.Context, id1 string, id2 string) (model.ConnectStatus, error) {
-
 	sortedId1, sortedId2 := SortIdAsc(id1, id2)
 
 	var connection *model.Connection
@@ -299,7 +297,6 @@ func (r *queryResolver) IsConnect(ctx context.Context, id1 string, id2 string) (
 	}
 
 	return model.ConnectStatusNotConnected, nil
-
 }
 
 // User1 is the resolver for the User1 field.

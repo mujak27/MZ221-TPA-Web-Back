@@ -17,23 +17,16 @@ import (
 // CreatePost is the resolver for the CreatePost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.InputPost) (*model.Post, error) {
 	userId := auth.JwtGetValue(ctx).Userid
+	fmt.Println(userId)
 
 	post := &model.Post{
-		ID:   uuid.NewString(),
-		Text: input.Text,
+		ID:       uuid.NewString(),
+		Text:     input.Text,
+		SenderId: userId,
 	}
 	r.posts = append(r.posts, post)
 
-	sender := &model.PostSender{
-		ID:     uuid.NewString(),
-		UserId: userId,
-		PostId: post.ID,
-	}
-
-	r.senders = append(r.senders, sender)
-
 	r.DB.Create(post)
-	r.DB.Create(sender)
 
 	return post, nil
 }
@@ -48,45 +41,9 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id string) (*model.Po
 	panic(fmt.Errorf("not implemented"))
 }
 
-// AddPostSender is the resolver for the AddPostSender field.
-func (r *mutationResolver) AddPostSender(ctx context.Context, id string) (*model.Post, error) {
-	var post *model.Post
-	if err := r.DB.First(&post, "id = ?", id).Error; err != nil {
-		return nil, err
-	}
-
-	userId := auth.JwtGetValue(ctx).Userid
-
-	sender := &model.PostSender{
-		ID:     uuid.NewString(),
-		UserId: userId,
-		PostId: id,
-	}
-	r.senders = append(r.senders, sender)
-	r.DB.Create(sender)
-
-	return post, nil
-}
-
-// Senders is the resolver for the Senders field.
-func (r *postResolver) Senders(ctx context.Context, obj *model.Post) ([]*model.User, error) {
-	var postSenders []*model.PostSender
-	if err := r.DB.Find(&postSenders, obj.Senders).Error; err != nil {
-		return nil, err
-	}
-
-	fmt.Println(postSenders)
-	var sendersId = lo.Map[*model.PostSender, string](postSenders, func(x *model.PostSender, _ int) string {
-		return x.UserId
-	})
-
-	fmt.Println(sendersId)
-
-	var users []*model.User
-	if err := r.DB.Find(&users, sendersId).Error; err != nil {
-		return nil, err
-	}
-	return users, nil
+// Sender is the resolver for the Sender field.
+func (r *postResolver) Sender(ctx context.Context, obj *model.Post) (*model.User, error) {
+	return UserById(r.Resolver, obj.SenderId)
 }
 
 // Post is the resolver for the Post field.
@@ -99,8 +56,52 @@ func (r *queryResolver) Post(ctx context.Context, id string) (*model.Post, error
 }
 
 // Posts is the resolver for the Posts field.
-func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *queryResolver) Posts(ctx context.Context, limit int, offset int) ([]*model.Post, error) {
+
+	fmt.Println(limit, offset)
+
+	var idList []string
+	myId := auth.JwtGetValue(ctx).Userid
+	idList = append(idList, myId)
+
+	var connections []*model.Connection
+
+	if err := r.DB.Find(&connections, "user1_id = ?", myId).Error; err != nil {
+		return nil, err
+	}
+	connectionIds := lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
+		return x.User2ID
+	})
+	idList = append(idList, connectionIds...)
+
+	if err := r.DB.Find(&connections, "user2_id = ?", myId).Error; err != nil {
+		return nil, err
+	}
+	connectionIds = lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
+		return x.User1ID
+	})
+	idList = append(idList, connectionIds...)
+
+	var follows []*model.Follow
+	if err := r.DB.Find(&follows, "user1_id = ?", myId).Error; err != nil {
+		return nil, err
+	}
+
+	followIds := lo.Map[*model.Follow, string](follows, func(x *model.Follow, _ int) string {
+		return x.User2ID
+	})
+
+	idList = append(idList, followIds...)
+	idList = lo.Uniq[string](idList)
+
+	fmt.Println(idList)
+
+	var posts []*model.Post
+	if err := r.DB.Limit(limit).Offset(offset).Find(&posts, "sender_id IN ?", idList).Error; err != nil {
+		return nil, err
+	}
+
+	return posts, nil
 }
 
 // PostsByUserID is the resolver for the PostsByUserId field.

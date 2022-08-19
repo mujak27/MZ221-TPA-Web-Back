@@ -9,3 +9,8 @@ many to many relationship
 3 18 aug:
 account activation
 
+4 19 aug
+profile page follow connect
+
+5 19 aug
+create post, home view followed connected posts, pagination function

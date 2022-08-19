@@ -78,7 +78,6 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AcceptConnectRequest func(childComplexity int, id1 string, id2 string) int
 		Activate             func(childComplexity int, id string) int
-		AddPostSender        func(childComplexity int, id string) int
 		CreatePost           func(childComplexity int, input model.InputPost) int
 		DeleteConnectRequest func(childComplexity int, id1 string, id2 string) int
 		DeletePost           func(childComplexity int, id string) int
@@ -91,9 +90,9 @@ type ComplexityRoot struct {
 	}
 
 	Post struct {
-		ID      func(childComplexity int) int
-		Senders func(childComplexity int) int
-		Text    func(childComplexity int) int
+		ID     func(childComplexity int) int
+		Sender func(childComplexity int) int
+		Text   func(childComplexity int) int
 	}
 
 	Query struct {
@@ -102,7 +101,7 @@ type ComplexityRoot struct {
 		IsFollow      func(childComplexity int, id1 string, id2 string) int
 		Login         func(childComplexity int, input model.InputLogin) int
 		Post          func(childComplexity int, id string) int
-		Posts         func(childComplexity int) int
+		Posts         func(childComplexity int, limit int, offset int) int
 		PostsByUserID func(childComplexity int, id string) int
 		Register      func(childComplexity int, input *model.InputRegister) int
 		Search        func(childComplexity int, keyword string) int
@@ -158,7 +157,6 @@ type MutationResolver interface {
 	CreatePost(ctx context.Context, input model.InputPost) (*model.Post, error)
 	UpdatePost(ctx context.Context, id string) (*model.Post, error)
 	DeletePost(ctx context.Context, id string) (*model.Post, error)
-	AddPostSender(ctx context.Context, id string) (*model.Post, error)
 	SendActivation(ctx context.Context, id string) (interface{}, error)
 	Activate(ctx context.Context, id string) (interface{}, error)
 	Follow(ctx context.Context, id1 string, id2 string) (interface{}, error)
@@ -169,7 +167,7 @@ type MutationResolver interface {
 	UnConnect(ctx context.Context, id1 string, id2 string) (interface{}, error)
 }
 type PostResolver interface {
-	Senders(ctx context.Context, obj *model.Post) ([]*model.User, error)
+	Sender(ctx context.Context, obj *model.Post) (*model.User, error)
 }
 type QueryResolver interface {
 	User(ctx context.Context, id string) (*model.User, error)
@@ -181,7 +179,7 @@ type QueryResolver interface {
 	IsConnect(ctx context.Context, id1 string, id2 string) (model.ConnectStatus, error)
 	Search(ctx context.Context, keyword string) (*model.Search, error)
 	Post(ctx context.Context, id string) (*model.Post, error)
-	Posts(ctx context.Context) ([]*model.Post, error)
+	Posts(ctx context.Context, limit int, offset int) ([]*model.Post, error)
 	PostsByUserID(ctx context.Context, id string) ([]*model.Post, error)
 }
 type SearchResolver interface {
@@ -309,18 +307,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Activate(childComplexity, args["id"].(string)), true
 
-	case "Mutation.AddPostSender":
-		if e.complexity.Mutation.AddPostSender == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_AddPostSender_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.AddPostSender(childComplexity, args["id"].(string)), true
-
 	case "Mutation.CreatePost":
 		if e.complexity.Mutation.CreatePost == nil {
 			break
@@ -436,12 +422,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.ID(childComplexity), true
 
-	case "Post.Senders":
-		if e.complexity.Post.Senders == nil {
+	case "Post.Sender":
+		if e.complexity.Post.Sender == nil {
 			break
 		}
 
-		return e.complexity.Post.Senders(childComplexity), true
+		return e.complexity.Post.Sender(childComplexity), true
 
 	case "Post.Text":
 		if e.complexity.Post.Text == nil {
@@ -515,7 +501,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.Posts(childComplexity), true
+		args, err := ec.field_Query_Posts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Posts(childComplexity, args["Limit"].(int), args["Offset"].(int)), true
 
 	case "Query.PostsByUserId":
 		if e.complexity.Query.PostsByUserID == nil {
@@ -804,13 +795,15 @@ directive @auth on FIELD_DEFINITION
 type Post {
   ID : ID!
   Text: String!
-  Senders: [User!]! @goField(forceResolver: true)
+  Sender: User! @goField(forceResolver: true)
   # Comment: [Comment!]! @goField(forceResolver: true)
 }
 
+
+
 extend type Query {
   Post(id: ID!): Post!
-  Posts: [Post!]! @auth
+  Posts(Limit:Int!, Offset:Int!): [Post!]! @auth
   PostsByUserId(id: ID!): [Post!]! @auth
 }
 
@@ -819,13 +812,14 @@ extend type Mutation {
   UpdatePost(id: ID!): Post!
   DeletePost(id: ID!): Post!
 
-  AddPostSender(id: ID!): Post!
+  # AddPostSender(id: ID!): Post!
 }
 
 input InputPost {
   text: String!
-  userId: String!
-}`, BuiltIn: false},
+}
+
+`, BuiltIn: false},
 	{Name: "../user.graphqls", Input: `
 scalar Any
 
@@ -959,21 +953,6 @@ func (ec *executionContext) field_Mutation_AcceptConnectRequest_args(ctx context
 }
 
 func (ec *executionContext) field_Mutation_Activate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_AddPostSender_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1258,6 +1237,30 @@ func (ec *executionContext) field_Query_PostsByUserId_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_Posts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["Limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Limit"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Limit"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["Offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Offset"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Offset"] = arg1
 	return args, nil
 }
 
@@ -2126,8 +2129,8 @@ func (ec *executionContext) fieldContext_Mutation_CreatePost(ctx context.Context
 				return ec.fieldContext_Post_ID(ctx, field)
 			case "Text":
 				return ec.fieldContext_Post_Text(ctx, field)
-			case "Senders":
-				return ec.fieldContext_Post_Senders(ctx, field)
+			case "Sender":
+				return ec.fieldContext_Post_Sender(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -2189,8 +2192,8 @@ func (ec *executionContext) fieldContext_Mutation_UpdatePost(ctx context.Context
 				return ec.fieldContext_Post_ID(ctx, field)
 			case "Text":
 				return ec.fieldContext_Post_Text(ctx, field)
-			case "Senders":
-				return ec.fieldContext_Post_Senders(ctx, field)
+			case "Sender":
+				return ec.fieldContext_Post_Sender(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -2252,8 +2255,8 @@ func (ec *executionContext) fieldContext_Mutation_DeletePost(ctx context.Context
 				return ec.fieldContext_Post_ID(ctx, field)
 			case "Text":
 				return ec.fieldContext_Post_Text(ctx, field)
-			case "Senders":
-				return ec.fieldContext_Post_Senders(ctx, field)
+			case "Sender":
+				return ec.fieldContext_Post_Sender(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -2266,69 +2269,6 @@ func (ec *executionContext) fieldContext_Mutation_DeletePost(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_DeletePost_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_AddPostSender(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_AddPostSender(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddPostSender(rctx, fc.Args["id"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Post)
-	fc.Result = res
-	return ec.marshalNPost2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_AddPostSender(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "ID":
-				return ec.fieldContext_Post_ID(ctx, field)
-			case "Text":
-				return ec.fieldContext_Post_Text(ctx, field)
-			case "Senders":
-				return ec.fieldContext_Post_Senders(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_AddPostSender_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -2863,8 +2803,8 @@ func (ec *executionContext) fieldContext_Post_Text(ctx context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _Post_Senders(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Post_Senders(ctx, field)
+func (ec *executionContext) _Post_Sender(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Post_Sender(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2877,7 +2817,7 @@ func (ec *executionContext) _Post_Senders(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Post().Senders(rctx, obj)
+		return ec.resolvers.Post().Sender(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2889,12 +2829,12 @@ func (ec *executionContext) _Post_Senders(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.User)
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚕᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Post_Senders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Post_Sender(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Post",
 		Field:      field,
@@ -3492,8 +3432,8 @@ func (ec *executionContext) fieldContext_Query_Post(ctx context.Context, field g
 				return ec.fieldContext_Post_ID(ctx, field)
 			case "Text":
 				return ec.fieldContext_Post_Text(ctx, field)
-			case "Senders":
-				return ec.fieldContext_Post_Senders(ctx, field)
+			case "Sender":
+				return ec.fieldContext_Post_Sender(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -3527,7 +3467,7 @@ func (ec *executionContext) _Query_Posts(ctx context.Context, field graphql.Coll
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Posts(rctx)
+			return ec.resolvers.Query().Posts(rctx, fc.Args["Limit"].(int), fc.Args["Offset"].(int))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.Auth == nil {
@@ -3575,11 +3515,22 @@ func (ec *executionContext) fieldContext_Query_Posts(ctx context.Context, field 
 				return ec.fieldContext_Post_ID(ctx, field)
 			case "Text":
 				return ec.fieldContext_Post_Text(ctx, field)
-			case "Senders":
-				return ec.fieldContext_Post_Senders(ctx, field)
+			case "Sender":
+				return ec.fieldContext_Post_Sender(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_Posts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -3647,8 +3598,8 @@ func (ec *executionContext) fieldContext_Query_PostsByUserId(ctx context.Context
 				return ec.fieldContext_Post_ID(ctx, field)
 			case "Text":
 				return ec.fieldContext_Post_Text(ctx, field)
-			case "Senders":
-				return ec.fieldContext_Post_Senders(ctx, field)
+			case "Sender":
+				return ec.fieldContext_Post_Sender(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -3913,8 +3864,8 @@ func (ec *executionContext) fieldContext_Search_Post(ctx context.Context, field 
 				return ec.fieldContext_Post_ID(ctx, field)
 			case "Text":
 				return ec.fieldContext_Post_Text(ctx, field)
-			case "Senders":
-				return ec.fieldContext_Post_Senders(ctx, field)
+			case "Sender":
+				return ec.fieldContext_Post_Sender(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -6546,7 +6497,7 @@ func (ec *executionContext) unmarshalInputInputPost(ctx context.Context, obj int
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"text", "userId"}
+	fieldsInOrder := [...]string{"text"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6558,14 +6509,6 @@ func (ec *executionContext) unmarshalInputInputPost(ctx context.Context, obj int
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("text"))
 			it.Text, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			it.UserID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6941,15 +6884,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "AddPostSender":
-
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_AddPostSender(ctx, field)
-			})
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "SendActivation":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -7057,7 +6991,7 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "Senders":
+		case "Sender":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -7066,7 +7000,7 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Post_Senders(ctx, field, obj)
+				res = ec._Post_Sender(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -8032,6 +7966,21 @@ func (ec *executionContext) unmarshalNInputLogin2MZ221ᚑTPAᚑWebᚑBackᚋgrap
 func (ec *executionContext) unmarshalNInputPost2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputPost(ctx context.Context, v interface{}) (model.InputPost, error) {
 	res, err := ec.unmarshalInputInputPost(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNPost2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {

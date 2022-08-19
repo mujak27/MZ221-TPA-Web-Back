@@ -5,39 +5,27 @@ package model
 type Post struct {
 	ID     string `gorm:"type:varchar(191)"`
 	Text    string  `json:"Text"`
-	Senders []*User `json:"Senders"   gorm:"many2many:post_senders;"`
+	SenderId string 
+	Sender *User  `json:"Sender" gorm:"reference:User"`
 }
 
-type PostSender struct {
-	ID     string `gorm:"type:varchar(191)"`
-	UserId string `json:"UserId" gorm:"reference:User;type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	PostId string `json:"PostId" gorm:"reference:Post;type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-}
+
+// type Post struct {
+// 	ID     string `gorm:"type:varchar(191)"`
+// 	Text    string  `json:"Text"`
+// 	Senders []*User `json:"Senders"   gorm:"many2many:post_senders;"`
+// }
+
+// type PostSender struct {
+// 	ID     string `gorm:"type:varchar(191)"`
+// 	UserId string `json:"UserId" gorm:"reference:User;type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+// 	PostId string `json:"PostId" gorm:"reference:Post;type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+// }
 
 
 
 type InputPost struct {
 	Text   string `json:"text"`
-	UserID string `json:"userId"`
+	Offset int    `json:"Offset"`
+	Limit  int    `json:"Limit"`
 }
-
-
-
-// type NewTodo struct {
-// 	Text   string `json:"text"`
-// 	UserID string `json:"userId"`
-// }
-
-// type Todo struct {
-	// ID     string `gorm:"type:varchar(191)"`
-// 	Text   string `json:"text"`
-// 	Done   bool   `json:"done"`
-// 	UserID string `json:"userId"`
-// 	User   *User  `json:"user"`
-// }
-
-// type InputTodo struct {
-// 	ID   string `json:"id"`
-// 	Text string `json:"text"`
-// 	Done bool   `json:"done"`
-// }

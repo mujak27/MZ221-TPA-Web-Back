@@ -62,7 +62,6 @@ func main() {
 		&model.Activation{},
 		&model.Post{},
 		&model.User{},
-		&model.PostSender{},
 	)
 
 	c := generated.Config{Resolvers: &graph.Resolver{

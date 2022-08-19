@@ -18,6 +18,5 @@ type Resolver struct {
 	activations     []*model.Activation
 	posts           []*model.Post
 	users           []*model.User
-	senders         []*model.PostSender
 	DB              *gorm.DB
 }
