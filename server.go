@@ -56,6 +56,9 @@ func main() {
 	}
 
 	db.AutoMigrate(
+		&model.ConnectRequest{},
+		&model.Connection{},
+		&model.Follow{},
 		&model.Activation{},
 		&model.Post{},
 		&model.User{},

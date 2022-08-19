@@ -62,9 +62,12 @@ models:
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
   Post:
-    # model: MZ221-TPA-Web-Back/graph/model.Post
+    model: MZ221-TPA-Web-Back/graph/model.Post
     # fields:
     #   user:
     #     resolver: true
   User:
     model: MZ221-TPA-Web-Back/graph/model.User
+  Search:
+    model: MZ221-TPA-Web-Back/graph/model.Search
+

@@ -12,7 +12,10 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	activationLinks []*model.Activation
+	connectRequests []*model.ConnectRequest
+	connections     []*model.Connection
+	follows         []*model.Follow
+	activations     []*model.Activation
 	posts           []*model.Post
 	users           []*model.User
 	senders         []*model.PostSender

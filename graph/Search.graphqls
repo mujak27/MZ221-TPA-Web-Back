@@ -1,0 +1,9 @@
+
+type Search{
+  Users : [User!]! @goField(forceResolver: true)
+  Post : [Post!]! @goField(forceResolver: true)
+}
+
+extend type Query{
+  Search(keyword : String!) : Search!
+}

@@ -1,6 +1,13 @@
 
 scalar Any
 
+enum ConnectStatus {
+  Connected
+  SentByUser1
+  SentByUser2
+  NotConnected
+}
+
 
 type User {
   ID: ID! 
@@ -33,11 +40,20 @@ type Visit {
 }
 
 # 2 way
+# id1 < id2
 type Connection {
   ID : ID!
   User1 : User! @goField(forceResolver: true)
   User2 : User! @goField(forceResolver: true)
 }
+
+# user 1 request to user 2
+type ConnectRequest {
+  ID : ID!
+  User1 : User! @goField(forceResolver: true)
+  User2 : User! @goField(forceResolver: true)
+}
+
 
 # user 1 follow user 2
 type Follow {
@@ -53,6 +69,9 @@ type Query {
   login(input : InputLogin!) : Any!
   register(input : InputRegister) : Any!
   Activation(id: ID!): Activation!
+
+  IsFollow(id1:ID!, id2:ID!) : Boolean!
+  IsConnect(id1:ID!, id2:ID!) : ConnectStatus!
 }
 
 input InputLogin {
@@ -71,4 +90,12 @@ input InputRegister {
 extend type Mutation {
   SendActivation(id: ID!): Any!
   Activate(id: ID!): Any!
+
+  Follow(id1: ID!, id2: ID!): Any!
+  UnFollow(id1: ID!, id2: ID!): Any!
+
+  SendConnectRequest(id1: ID!, id2: ID!): Any!
+  DeleteConnectRequest(id1: ID!, id2: ID!): Any!
+  AcceptConnectRequest(id1: ID!, id2: ID!): Any!
+  UnConnect(id1: ID!, id2: ID!): Any!
 }
