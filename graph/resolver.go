@@ -12,11 +12,18 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	connectRequests []*model.ConnectRequest
-	connections     []*model.Connection
-	follows         []*model.Follow
-	activations     []*model.Activation
-	posts           []*model.Post
-	users           []*model.User
-	DB              *gorm.DB
+	experiences      []*model.Experience
+	educations       []*model.Education
+	connectRequests  []*model.ConnectRequest
+	connections      []*model.Connection
+	activations      []*model.Activation
+	posts            []*model.Post
+	users            []*model.User
+	user_follows     []*model.UserFollow
+	user_visits      []*model.UserVisit
+	user_experiences []*model.UserExperience
+	user_educations  []*model.UserEducation
+	messages         []*model.Message
+	DB               *gorm.DB
+	// follows         []*model.Follow
 }

@@ -57,12 +57,22 @@ func (r *queryResolver) Post(ctx context.Context, id string) (*model.Post, error
 
 // Posts is the resolver for the Posts field.
 func (r *queryResolver) Posts(ctx context.Context, limit int, offset int) ([]*model.Post, error) {
-
 	fmt.Println(limit, offset)
 
 	var idList []string
 	myId := auth.JwtGetValue(ctx).Userid
 	idList = append(idList, myId)
+
+	var follows []*model.UserFollow
+
+	if err := r.DB.Find(&follows, "user1_id = ?", myId).Error; err != nil {
+		return nil, err
+	}
+
+	followIds := lo.Map[*model.UserFollow, string](follows, func(x *model.UserFollow, _ int) string {
+		return x.FollowId
+	})
+	idList = append(idList, followIds...)
 
 	var connections []*model.Connection
 
@@ -82,16 +92,6 @@ func (r *queryResolver) Posts(ctx context.Context, limit int, offset int) ([]*mo
 	})
 	idList = append(idList, connectionIds...)
 
-	var follows []*model.Follow
-	if err := r.DB.Find(&follows, "user1_id = ?", myId).Error; err != nil {
-		return nil, err
-	}
-
-	followIds := lo.Map[*model.Follow, string](follows, func(x *model.Follow, _ int) string {
-		return x.User2ID
-	})
-
-	idList = append(idList, followIds...)
 	idList = lo.Uniq[string](idList)
 
 	fmt.Println(idList)
@@ -107,6 +107,55 @@ func (r *queryResolver) Posts(ctx context.Context, limit int, offset int) ([]*mo
 // PostsByUserID is the resolver for the PostsByUserId field.
 func (r *queryResolver) PostsByUserID(ctx context.Context, id string) ([]*model.Post, error) {
 	panic(fmt.Errorf("not implemented"))
+}
+
+// PostsByKeyword is the resolver for the PostsByKeyword field.
+func (r *queryResolver) PostsByKeyword(ctx context.Context, keyword string, limit int, offset int) ([]*model.Post, error) {
+	if keyword == "" {
+		keyword = "%"
+	}
+
+	var idList []string
+	myId := auth.JwtGetValue(ctx).Userid
+	idList = append(idList, myId)
+
+	user, err := UserById(r.Resolver, myId)
+	if err != nil {
+		return nil, err
+	}
+
+	followIds := lo.Map[*model.User, string](user.Follows, func(x *model.User, _ int) string {
+		return x.ID
+	})
+	idList = append(idList, followIds...)
+
+	var connections []*model.Connection
+	if err := r.DB.Find(&connections, "user1_id = ?", myId).Error; err != nil {
+		return nil, err
+	}
+	connectionIds := lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
+		return x.User2ID
+	})
+	idList = append(idList, connectionIds...)
+
+	if err := r.DB.Find(&connections, "user2_id = ?", myId).Error; err != nil {
+		return nil, err
+	}
+	connectionIds = lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
+		return x.User1ID
+	})
+	idList = append(idList, connectionIds...)
+
+	idList = lo.Uniq[string](idList)
+
+	fmt.Println(idList)
+
+	var posts []*model.Post
+	if err := r.DB.Limit(limit).Offset(offset).Find(&posts, "sender_id IN ? and text like ?", idList, "%"+keyword+"%").Error; err != nil {
+		return nil, err
+	}
+
+	return posts, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

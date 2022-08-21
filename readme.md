@@ -14,3 +14,9 @@ profile page follow connect
 
 5 19 aug
 create post, home view followed connected posts, pagination function
+
+6 20 aug
+search also contains post, view count add institute and education
+
+
+problems

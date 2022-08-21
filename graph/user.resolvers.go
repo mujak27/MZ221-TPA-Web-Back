@@ -9,8 +9,10 @@ import (
 	"MZ221-TPA-Web-Back/graph/model"
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 )
 
 // User is the resolver for the User field.
@@ -20,12 +22,12 @@ func (r *activationResolver) User(ctx context.Context, obj *model.Activation) (*
 
 // User1 is the resolver for the User1 field.
 func (r *connectRequestResolver) User1(ctx context.Context, obj *model.ConnectRequest) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return UserById(r.Resolver, obj.User1ID)
 }
 
 // User2 is the resolver for the User2 field.
 func (r *connectRequestResolver) User2(ctx context.Context, obj *model.ConnectRequest) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return UserById(r.Resolver, obj.User2ID)
 }
 
 // User1 is the resolver for the User1 field.
@@ -39,13 +41,18 @@ func (r *connectionResolver) User2(ctx context.Context, obj *model.Connection) (
 }
 
 // User1 is the resolver for the User1 field.
-func (r *followResolver) User1(ctx context.Context, obj *model.Follow) (*model.User, error) {
-	return UserById(r.Resolver, obj.User1ID)
+func (r *messageResolver) User1(ctx context.Context, obj *model.Message) (*model.User, error) {
+	return UserById(r.Resolver, obj.User1Id)
 }
 
 // User2 is the resolver for the User2 field.
-func (r *followResolver) User2(ctx context.Context, obj *model.Follow) (*model.User, error) {
-	return UserById(r.Resolver, obj.User2ID)
+func (r *messageResolver) User2(ctx context.Context, obj *model.Message) (*model.User, error) {
+	return UserById(r.Resolver, obj.User2Id)
+}
+
+// CreatedAt is the resolver for the CreatedAt field.
+func (r *messageResolver) CreatedAt(ctx context.Context, obj *model.Message) (string, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // SendActivation is the resolver for the SendActivation field.
@@ -73,21 +80,12 @@ func (r *mutationResolver) Activate(ctx context.Context, id string) (interface{}
 
 // Follow is the resolver for the Follow field.
 func (r *mutationResolver) Follow(ctx context.Context, id1 string, id2 string) (interface{}, error) {
-	var follow *model.Follow
-	err := r.DB.First(&follow, "user1_id = ? and user2_id = ?", id1, id2).Error
-	if err == nil {
-		return map[string]interface{}{
-			"status": "already exist",
-		}, nil
+	follow := &model.UserFollow{
+		ID:       uuid.NewString(),
+		UserId:   id1,
+		FollowId: id2,
 	}
-
-	follow = &model.Follow{
-		ID:      uuid.NewString(),
-		User1ID: id1,
-		User2ID: id2,
-	}
-	r.follows = append(r.follows, follow)
-
+	r.user_follows = append(r.user_follows, follow)
 	r.DB.Create(follow)
 
 	return map[string]interface{}{
@@ -97,13 +95,15 @@ func (r *mutationResolver) Follow(ctx context.Context, id1 string, id2 string) (
 
 // UnFollow is the resolver for the UnFollow field.
 func (r *mutationResolver) UnFollow(ctx context.Context, id1 string, id2 string) (interface{}, error) {
-	var follow *model.Follow
-	err := r.DB.First(&follow, "user1_id = ? and user2_id = ?", id1, id2).Error
-	if err != nil {
+	var follow *model.UserFollow
+	if err := r.DB.First(&follow, "user_id = ? AND follow_id = ?", id1, id2).Error; err != nil {
 		return map[string]interface{}{
-			"status": "failed",
+			"status": "not found",
 		}, nil
 	}
+	r.user_follows = lo.Filter[*model.UserFollow](r.user_follows, func(x *model.UserFollow, _ int) bool {
+		return x.UserId == id1 && x.FollowId == id2
+	})
 	r.DB.Delete(follow)
 	return map[string]interface{}{
 		"status": "success",
@@ -191,15 +191,198 @@ func (r *mutationResolver) UnConnect(ctx context.Context, id1 string, id2 string
 	}, nil
 }
 
+// SendMessage is the resolver for the SendMessage field.
+func (r *mutationResolver) SendMessage(ctx context.Context, input model.InputMessage) (interface{}, error) {
+	message := &model.Message{
+		ID:        uuid.NewString(),
+		Text:      input.Text,
+		User1Id:   input.User1Id,
+		User2Id:   input.User2Id,
+		CreatedAt: time.Time{},
+	}
+	r.messages = append(r.messages, message)
+	r.DB.Create(message)
+
+	return map[string]interface{}{
+		"status": "success",
+	}, nil
+}
+
+// Visit is the resolver for the Visit field.
+func (r *mutationResolver) Visit(ctx context.Context, id string) (interface{}, error) {
+	myId := auth.JwtGetValue(ctx).Userid
+
+	var visit *model.UserVisit
+	err := r.DB.First(&visit, "visit_id = ? and user_id = ?", id, myId).Error
+	if err == nil {
+		var visits []*model.UserVisit
+		r.DB.Find(&visits, "visit_id = ?", id)
+		return map[string]interface{}{
+			"status": "already exists",
+			"length": len(visits),
+		}, nil
+	}
+	visit = &model.UserVisit{
+		ID:      uuid.NewString(),
+		UserId:  myId,
+		VisitId: id,
+	}
+	r.user_visits = append(r.user_visits, visit)
+	r.DB.Create(visit)
+
+	var visits []*model.UserVisit
+	r.DB.Find(&visits, "visit_id = ?", id)
+
+	return map[string]interface{}{
+		"status": "success",
+		"length": len(visits),
+	}, nil
+}
+
+// AddEducation is the resolver for the AddEducation field.
+func (r *mutationResolver) AddEducation(ctx context.Context, input model.InputEducation) (*model.Education, error) {
+	education := &model.Education{
+		ID:        uuid.NewString(),
+		School:    input.School,
+		Field:     input.Field,
+		StartedAt: input.StartedAt,
+		EndedAt:   input.EndedAt,
+	}
+	r.educations = append(r.educations, education)
+	r.DB.Create(education)
+
+	userEducation := &model.UserEducation{
+		ID:          uuid.NewString(),
+		UserId:      auth.JwtGetValue(ctx).Userid,
+		EducationId: education.ID,
+	}
+	r.user_educations = append(r.user_educations, userEducation)
+	r.DB.Create(userEducation)
+
+	return education, nil
+}
+
+// UpdateEducation is the resolver for the UpdateEducation field.
+func (r *mutationResolver) UpdateEducation(ctx context.Context, id string, input model.InputEducation) (*model.Education, error) {
+	var education *model.Education
+	if err := r.DB.First(&education, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+
+	if input.School != "" {
+		education.School = input.School
+	}
+	if input.Field != "" {
+		education.Field = input.Field
+	}
+	if input.StartedAt != "" {
+		education.StartedAt = input.StartedAt
+	}
+	if input.EndedAt != "" {
+		education.EndedAt = input.EndedAt
+	}
+
+	r.DB.Save(education)
+
+	return education, nil
+}
+
+// RemoveEducation is the resolver for the RemoveEducation field.
+func (r *mutationResolver) RemoveEducation(ctx context.Context, id string) (interface{}, error) {
+	var education *model.Education
+	if err := r.DB.First(&education, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	r.DB.Delete(education)
+
+	return map[string]interface{}{
+		"status": "success",
+	}, nil
+}
+
+// AddExperience is the resolver for the AddExperience field.
+func (r *mutationResolver) AddExperience(ctx context.Context, input model.InputExperience) (*model.Experience, error) {
+	experience := &model.Experience{
+		ID:        uuid.NewString(),
+		Position:  input.Position,
+		Desc:      input.Desc,
+		Company:   input.Company,
+		StartedAt: input.StartedAt,
+		EndedAt:   input.EndedAt,
+		IsActive:  input.IsActive,
+	}
+	r.experiences = append(r.experiences, experience)
+	r.DB.Create(experience)
+
+	userExperience := &model.UserExperience{
+		ID:           uuid.NewString(),
+		UserId:       auth.JwtGetValue(ctx).Userid,
+		ExperienceId: experience.ID,
+	}
+	r.user_experiences = append(r.user_experiences, userExperience)
+	r.DB.Create(userExperience)
+
+	return experience, nil
+}
+
+// UpdateExperience is the resolver for the UpdateExperience field.
+func (r *mutationResolver) UpdateExperience(ctx context.Context, id string, input model.InputExperience) (*model.Experience, error) {
+	var experience *model.Experience
+	if err := r.DB.First(&experience, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+
+	if input.StartedAt != "" {
+		experience.StartedAt = input.StartedAt
+	}
+	if input.EndedAt != "" {
+		experience.EndedAt = input.EndedAt
+	}
+	if input.Position != "" {
+		experience.Position = input.Position
+	}
+	if input.Desc != "" {
+		experience.Desc = input.Desc
+	}
+	if input.Company != "" {
+		experience.Company = input.Company
+	}
+	if input.IsActive != experience.IsActive {
+		experience.IsActive = input.IsActive
+	}
+
+	r.DB.Save(experience)
+
+	return experience, nil
+}
+
+// RemoveExperience is the resolver for the RemoveExperience field.
+func (r *mutationResolver) RemoveExperience(ctx context.Context, id string) (interface{}, error) {
+	var experience *model.Experience
+	if err := r.DB.First(&experience, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	fmt.Println(experience)
+	r.DB.Delete(experience)
+
+	return map[string]interface{}{
+		"status": "success",
+	}, nil
+}
+
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
 	return UserById(r.Resolver, id)
 }
 
 // UsersByName is the resolver for the UsersByName field.
-func (r *queryResolver) UsersByName(ctx context.Context, name *string) ([]*model.User, error) {
+func (r *queryResolver) UsersByName(ctx context.Context, name *string, limit int, offset int) ([]*model.User, error) {
+	if *name == "" {
+		*name = "%"
+	}
+
 	var users []*model.User
-	if err := r.DB.Find(&users, "concat(first_name, mid_name, last_name) like ?", "%"+*name+"%").Error; err != nil {
+	if err := r.DB.Limit(limit).Offset(offset).Find(&users, "concat(first_name, mid_name, last_name) like ?", "%"+*name+"%").Error; err != nil {
 		return nil, err
 	}
 	return users, nil
@@ -211,7 +394,6 @@ func (r *queryResolver) Login(ctx context.Context, input model.InputLogin) (inte
 	if err := r.DB.Where("email = ?", input.Email).First(&user, "password = ?", input.Password).Error; err != nil {
 		return nil, err
 	}
-	fmt.Println(user)
 
 	token, err := auth.JwtGenerate(ctx, user.ID)
 	if err != nil {
@@ -240,6 +422,8 @@ func (r *queryResolver) Register(ctx context.Context, input *model.InputRegister
 		ProfileLink:     "",
 		About:           "",
 		Location:        "",
+		Visits:          []*model.User{},
+		Follows:         []*model.User{},
 	}
 	r.users = append(r.users, newUser)
 
@@ -268,11 +452,14 @@ func (r *queryResolver) Activation(ctx context.Context, id string) (*model.Activ
 
 // IsFollow is the resolver for the IsFollow field.
 func (r *queryResolver) IsFollow(ctx context.Context, id1 string, id2 string) (bool, error) {
-	var follow *model.Follow
-	if err := r.DB.First(&follow, "user1_id = ? and user2_id = ?", id1, id2).Error; err != nil {
-		return false, nil
+	var follow *model.UserFollow
+	if err := r.DB.First(&follow, "user_id = ? AND follow_id = ?", id1, id2).Error; err != nil {
+		return false, err
 	}
-	return true, nil
+	if follow != nil {
+		return true, nil
+	}
+	return false, nil
 }
 
 // IsConnect is the resolver for the IsConnect field.
@@ -299,14 +486,93 @@ func (r *queryResolver) IsConnect(ctx context.Context, id1 string, id2 string) (
 	return model.ConnectStatusNotConnected, nil
 }
 
-// User1 is the resolver for the User1 field.
-func (r *visitResolver) User1(ctx context.Context, obj *model.Visit) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+// ConnectedUsers is the resolver for the ConnectedUsers field.
+func (r *queryResolver) ConnectedUsers(ctx context.Context) ([]*model.User, error) {
+	myId := auth.JwtGetValue(ctx).Userid
+	var userIds []string
+	var err error
+	var connections []*model.Connection
+
+	err = r.DB.Find(&connections, "user1_id = ?", myId).Error
+	if err != nil {
+		return nil, err
+	}
+	userIds = lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
+		return x.User2ID
+	})
+
+	err = r.DB.Find(&connections, "user2_id = ?", myId).Error
+	if err != nil {
+		return nil, err
+	}
+	userIds = append(userIds, lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
+		return x.User1ID
+	})...)
+
+	return UsersById(r.Resolver, userIds)
 }
 
-// User2 is the resolver for the User2 field.
-func (r *visitResolver) User2(ctx context.Context, obj *model.Visit) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+// Messages is the resolver for the Messages field.
+func (r *queryResolver) Messages(ctx context.Context, id1 string, id2 string) ([]*model.Message, error) {
+	var messages []*model.Message
+	if err := r.DB.Find(&messages, "(user1_id = ? and user2_id = ?) or (user1_id = ? and user2_id = ?) order by created_at", id1, id2, id2, id1).Error; err != nil {
+		return nil, err
+	}
+	return messages, nil
+}
+
+// Visits is the resolver for the Visits field.
+func (r *userResolver) Visits(ctx context.Context, obj *model.User) ([]*model.User, error) {
+	var visits []*model.UserVisit
+	err := r.DB.Find(&visits, "visit_id = ?", obj.ID).Error
+	if err != nil {
+		return nil, err
+	}
+
+	visitIds := lo.Map[*model.UserVisit, string](visits, func(x *model.UserVisit, _ int) string {
+		return x.UserId
+	})
+	return UsersById(r.Resolver, visitIds)
+}
+
+// Follows is the resolver for the Follows field.
+func (r *userResolver) Follows(ctx context.Context, obj *model.User) ([]*model.User, error) {
+	var follows []*model.UserFollow
+	err := r.DB.Find(&follows, "user_id = ?", obj.ID).Error
+	if err != nil {
+		return nil, err
+	}
+
+	followIds := lo.Map[*model.UserFollow, string](follows, func(x *model.UserFollow, _ int) string {
+		return x.FollowId
+	})
+	return UsersById(r.Resolver, followIds)
+}
+
+// Experiences is the resolver for the Experiences field.
+func (r *userResolver) Experiences(ctx context.Context, obj *model.User) ([]*model.Experience, error) {
+	experienceIds := lo.Map[*model.Experience, string](obj.Experiences, func(x *model.Experience, _ int) string {
+		return x.ID
+	})
+
+	var experiences []*model.Experience
+	if err := r.DB.Find(&experiences, experienceIds).Error; err != nil {
+		return nil, err
+	}
+	return experiences, nil
+}
+
+// Educations is the resolver for the Educations field.
+func (r *userResolver) Educations(ctx context.Context, obj *model.User) ([]*model.Education, error) {
+	educationIds := lo.Map[*model.Education, string](obj.Educations, func(x *model.Education, _ int) string {
+		return x.ID
+	})
+
+	var educations []*model.Education
+	if err := r.DB.Find(&educations, educationIds).Error; err != nil {
+		return nil, err
+	}
+	return educations, nil
 }
 
 // Activation returns generated.ActivationResolver implementation.
@@ -320,18 +586,18 @@ func (r *Resolver) ConnectRequest() generated.ConnectRequestResolver {
 // Connection returns generated.ConnectionResolver implementation.
 func (r *Resolver) Connection() generated.ConnectionResolver { return &connectionResolver{r} }
 
-// Follow returns generated.FollowResolver implementation.
-func (r *Resolver) Follow() generated.FollowResolver { return &followResolver{r} }
+// Message returns generated.MessageResolver implementation.
+func (r *Resolver) Message() generated.MessageResolver { return &messageResolver{r} }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-// Visit returns generated.VisitResolver implementation.
-func (r *Resolver) Visit() generated.VisitResolver { return &visitResolver{r} }
+// User returns generated.UserResolver implementation.
+func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
 
 type activationResolver struct{ *Resolver }
 type connectRequestResolver struct{ *Resolver }
 type connectionResolver struct{ *Resolver }
-type followResolver struct{ *Resolver }
+type messageResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-type visitResolver struct{ *Resolver }
+type userResolver struct{ *Resolver }

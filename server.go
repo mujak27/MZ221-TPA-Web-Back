@@ -58,10 +58,17 @@ func main() {
 	db.AutoMigrate(
 		&model.ConnectRequest{},
 		&model.Connection{},
-		&model.Follow{},
 		&model.Activation{},
+		&model.Education{},
+		&model.Experience{},
 		&model.Post{},
+
 		&model.User{},
+		&model.UserFollow{},
+		&model.UserVisit{},
+		&model.UserEducation{},
+		&model.UserExperience{},
+		&model.Message{},
 	)
 
 	c := generated.Config{Resolvers: &graph.Resolver{

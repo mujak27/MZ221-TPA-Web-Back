@@ -21,6 +21,7 @@ extend type Query {
   Post(id: ID!): Post!
   Posts(Limit:Int!, Offset:Int!): [Post!]! @auth
   PostsByUserId(id: ID!): [Post!]! @auth
+  PostsByKeyword(Keyword : String!,, Limit: Int!, Offset:Int!):[Post!]!
 }
 
 extend type Mutation {
