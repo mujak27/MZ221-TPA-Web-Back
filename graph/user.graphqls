@@ -1,5 +1,6 @@
 
 scalar Any
+scalar Upload
 
 enum ConnectStatus {
   Connected
@@ -65,6 +66,12 @@ type Activation {
   User : User! @goField(forceResolver: true)
 }
 
+
+type Reset {
+  ID : ID!
+  User : User! @goField(forceResolver: true)
+}
+
 # 2 way
 # id1 < id2
 type Connection {
@@ -95,6 +102,7 @@ type Query {
   login(input : InputLogin!) : Any!
   register(input : InputRegister) : Any!
   Activation(id: ID!): Activation!
+  CheckReset(id : ID!) : User!
 
   IsFollow(id1:ID!, id2:ID!) : Boolean!
   IsConnect(id1:ID!, id2:ID!) : ConnectStatus!
@@ -104,6 +112,10 @@ type Query {
 }
 
 extend type Mutation {
+  UpdateProfile(input : InputUser!) : User!
+  ForgetPassword(email : String!) : Any!
+  ResetPassword(id : ID!, password : String!) : Any!
+
   SendActivation(id: ID!): Any!
   Activate(id: ID!): Any!
 
@@ -162,4 +174,16 @@ input InputRegister {
   FirstName : String!
   LastName : String!
   MidName : String!
+}
+
+input InputUser{
+  FirstName : String!
+  LastName : String!
+  MidName : String!
+  ProfilePhoto : String!
+  BackgroundPhoto : String!
+  Headline : String!
+  Pronoun : String!
+  About : String!
+  Location : String!
 }

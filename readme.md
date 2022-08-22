@@ -15,8 +15,15 @@ profile page follow connect
 5 19 aug
 create post, home view followed connected posts, pagination function
 
-6 20 aug
-search also contains post, view count add institute and education
+6 
+20 aug
+search also contains post, view count
+21 aug
+institute education, message
+
+7
+22 aug
+update profile (except password & email), update profile & background img, forget reset password, like, comment
 
 
 problems

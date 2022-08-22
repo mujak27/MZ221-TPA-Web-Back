@@ -61,14 +61,18 @@ func main() {
 		&model.Activation{},
 		&model.Education{},
 		&model.Experience{},
-		&model.Post{},
 
 		&model.User{},
+		&model.Reset{},
 		&model.UserFollow{},
 		&model.UserVisit{},
 		&model.UserEducation{},
 		&model.UserExperience{},
 		&model.Message{},
+
+		&model.Post{},
+		&model.PostLike{},
+		&model.Comment{},
 	)
 
 	c := generated.Config{Resolvers: &graph.Resolver{

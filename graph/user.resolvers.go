@@ -17,42 +17,107 @@ import (
 
 // User is the resolver for the User field.
 func (r *activationResolver) User(ctx context.Context, obj *model.Activation) (*model.User, error) {
-	return UserById(r.Resolver, obj.UserId)
+	panic(fmt.Errorf("not implemented"))
 }
 
 // User1 is the resolver for the User1 field.
 func (r *connectRequestResolver) User1(ctx context.Context, obj *model.ConnectRequest) (*model.User, error) {
-	return UserById(r.Resolver, obj.User1ID)
+	panic(fmt.Errorf("not implemented"))
 }
 
 // User2 is the resolver for the User2 field.
 func (r *connectRequestResolver) User2(ctx context.Context, obj *model.ConnectRequest) (*model.User, error) {
-	return UserById(r.Resolver, obj.User2ID)
+	panic(fmt.Errorf("not implemented"))
 }
 
 // User1 is the resolver for the User1 field.
 func (r *connectionResolver) User1(ctx context.Context, obj *model.Connection) (*model.User, error) {
-	return UserById(r.Resolver, obj.User1ID)
+	panic(fmt.Errorf("not implemented"))
 }
 
 // User2 is the resolver for the User2 field.
 func (r *connectionResolver) User2(ctx context.Context, obj *model.Connection) (*model.User, error) {
-	return UserById(r.Resolver, obj.User2ID)
+	panic(fmt.Errorf("not implemented"))
 }
 
 // User1 is the resolver for the User1 field.
 func (r *messageResolver) User1(ctx context.Context, obj *model.Message) (*model.User, error) {
-	return UserById(r.Resolver, obj.User1Id)
+	panic(fmt.Errorf("not implemented"))
 }
 
 // User2 is the resolver for the User2 field.
 func (r *messageResolver) User2(ctx context.Context, obj *model.Message) (*model.User, error) {
-	return UserById(r.Resolver, obj.User2Id)
+	panic(fmt.Errorf("not implemented"))
 }
 
 // CreatedAt is the resolver for the CreatedAt field.
 func (r *messageResolver) CreatedAt(ctx context.Context, obj *model.Message) (string, error) {
 	panic(fmt.Errorf("not implemented"))
+}
+
+// UpdateProfile is the resolver for the UpdateProfile field.
+func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.InputUser) (*model.User, error) {
+	myId := getId(ctx)
+
+	user, err := UserById(r.Resolver, myId)
+	if err != nil {
+		return nil, err
+	}
+
+	user.FirstName = input.FirstName
+	user.LastName = input.LastName
+	user.MidName = input.MidName
+	user.ProfilePhoto = input.ProfilePhoto
+	user.BackgroundPhoto = input.BackgroundPhoto
+	user.Headline = input.Headline
+	user.Pronoun = input.Pronoun
+	user.About = input.About
+	user.Location = input.Location
+
+	r.DB.Save(user)
+
+	return user, nil
+}
+
+// ForgetPassword is the resolver for the ForgetPassword field.
+func (r *mutationResolver) ForgetPassword(ctx context.Context, email string) (interface{}, error) {
+	var user *model.User
+	if err := r.DB.First(&user, "email = ?", email).Error; err != nil {
+		return map[string]interface{}{
+			"status": "email not found",
+		}, err
+	}
+
+	reset := &model.Reset{
+		ID:     uuid.NewString(),
+		UserId: user.ID,
+	}
+	r.resets = append(r.resets, reset)
+	r.DB.Create(reset)
+
+	SendResetPasswordLink(r.Resolver, user, reset)
+
+	return map[string]interface{}{
+		"status": "email has been sent",
+	}, nil
+}
+
+// ResetPassword is the resolver for the ResetPassword field.
+func (r *mutationResolver) ResetPassword(ctx context.Context, id string, password string) (interface{}, error) {
+	var reset *model.Reset
+	if err := r.DB.First(&reset, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	user, err := UserById(r.Resolver, reset.UserId)
+	if err != nil {
+		return nil, err
+	}
+	user.Password = password
+	r.DB.Save(user)
+	r.DB.Delete(reset)
+	return map[string]interface{}{
+		"status": "success",
+	}, nil
 }
 
 // SendActivation is the resolver for the SendActivation field.
@@ -215,6 +280,7 @@ func (r *mutationResolver) Visit(ctx context.Context, id string) (interface{}, e
 	var visit *model.UserVisit
 	err := r.DB.First(&visit, "visit_id = ? and user_id = ?", id, myId).Error
 	if err == nil {
+
 		var visits []*model.UserVisit
 		r.DB.Find(&visits, "visit_id = ?", id)
 		return map[string]interface{}{
@@ -450,6 +516,19 @@ func (r *queryResolver) Activation(ctx context.Context, id string) (*model.Activ
 	return activation, nil
 }
 
+// CheckReset is the resolver for the CheckReset field.
+func (r *queryResolver) CheckReset(ctx context.Context, id string) (*model.User, error) {
+	var reset *model.Reset
+	if err := r.DB.First(&reset, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	user, err := UserById(r.Resolver, reset.UserId)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 // IsFollow is the resolver for the IsFollow field.
 func (r *queryResolver) IsFollow(ctx context.Context, id1 string, id2 string) (bool, error) {
 	var follow *model.UserFollow
@@ -489,10 +568,10 @@ func (r *queryResolver) IsConnect(ctx context.Context, id1 string, id2 string) (
 // ConnectedUsers is the resolver for the ConnectedUsers field.
 func (r *queryResolver) ConnectedUsers(ctx context.Context) ([]*model.User, error) {
 	myId := auth.JwtGetValue(ctx).Userid
+
 	var userIds []string
 	var err error
 	var connections []*model.Connection
-
 	err = r.DB.Find(&connections, "user1_id = ?", myId).Error
 	if err != nil {
 		return nil, err
@@ -519,6 +598,11 @@ func (r *queryResolver) Messages(ctx context.Context, id1 string, id2 string) ([
 		return nil, err
 	}
 	return messages, nil
+}
+
+// User is the resolver for the User field.
+func (r *resetResolver) User(ctx context.Context, obj *model.Reset) (*model.User, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // Visits is the resolver for the Visits field.
@@ -592,6 +676,9 @@ func (r *Resolver) Message() generated.MessageResolver { return &messageResolver
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Reset returns generated.ResetResolver implementation.
+func (r *Resolver) Reset() generated.ResetResolver { return &resetResolver{r} }
+
 // User returns generated.UserResolver implementation.
 func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
 
@@ -600,4 +687,5 @@ type connectRequestResolver struct{ *Resolver }
 type connectionResolver struct{ *Resolver }
 type messageResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type resetResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }

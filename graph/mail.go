@@ -12,8 +12,6 @@ import (
 )
 
 func SendActivationLink(r *Resolver, receiver *model.User) {
-
-	fmt.Println("1")
 	var activationLink *model.Activation
 
 	if err := r.DB.First(&activationLink, "user_id = ?", receiver.ID).Error; err != nil {
@@ -43,6 +41,36 @@ func SendActivationLink(r *Resolver, receiver *model.User) {
 				"template": "Z25DPSG3654FDHNVCFMHW8RM3Y3T",
 				"data": map[string]string{
 					"activationUrl": activationUrl,
+				},
+			},
+		},
+	)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println(requestID)
+
+}
+
+func SendResetPasswordLink(r *Resolver, receiver *model.User, reset *model.Reset) {
+
+	// resetUrl := os.Getenv("FRONTEND_LINK") + "/" + reset.ID
+	resetUrl := "http://localhost:5173" + "/reset/" + reset.ID
+
+	// client := courier.CreateClient(os.Getenv("COURIER_AUTH_TOKEN"), nil)
+	client := courier.CreateClient("pk_prod_XJKJ5HPAVPMQ0DMA822ZVE18XQ3T", nil)
+
+	requestID, err := client.SendMessage(
+		context.Background(),
+		courier.SendMessageRequestBody{
+			Message: map[string]interface{}{
+				"to": map[string]string{
+					"email": receiver.Email,
+				},
+				"template": "2WGYHFDR4JMT1SNDWMQ3TDD6D48W",
+				"data": map[string]string{
+					"resetUrl": resetUrl,
 				},
 			},
 		},

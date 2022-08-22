@@ -18,12 +18,15 @@ type Resolver struct {
 	connections      []*model.Connection
 	activations      []*model.Activation
 	posts            []*model.Post
+	postLikes        []*model.PostLike
+	comments         []*model.Comment
 	users            []*model.User
 	user_follows     []*model.UserFollow
 	user_visits      []*model.UserVisit
 	user_experiences []*model.UserExperience
 	user_educations  []*model.UserEducation
 	messages         []*model.Message
+	resets           []*model.Reset
 	DB               *gorm.DB
 	// follows         []*model.Follow
 }

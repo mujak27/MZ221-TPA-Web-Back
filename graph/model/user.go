@@ -30,8 +30,14 @@ type User struct {
 	Educations      []*Education  `json:"Educations" gorm:"many2many:user_educations"`
 }
 
+type Reset struct {
+	ID     string `json:"id" gorm:"type:varchar(191)"`
+	UserId string `gorm:"reference:User;type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	User   *User  `json:"User"`
+}
+
 type Message struct {
-	ID        string    `json:"ID"`
+	ID        string    `json:"id" gorm:"type:varchar(191)"`
 	Text      string    `json:"Text"`
 	User1Id   string    `gorm:"reference:User;type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	User1     *User     `json:"User1"`
@@ -182,4 +188,16 @@ type InputMessage struct {
 	Text    string `json:"Text"`
 	User1Id string `json:"User1Id"`
 	User2Id string `json:"User2Id"`
+}
+
+type InputUser struct {
+	FirstName       string `json:"FirstName"`
+	LastName        string `json:"LastName"`
+	MidName         string `json:"MidName"`
+	ProfilePhoto    string `json:"ProfilePhoto"`
+	BackgroundPhoto string `json:"BackgroundPhoto"`
+	Headline        string `json:"Headline"`
+	Pronoun         string `json:"Pronoun"`
+	About           string `json:"About"`
+	Location        string `json:"Location"`
 }
