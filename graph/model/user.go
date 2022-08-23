@@ -30,6 +30,13 @@ type User struct {
 	Educations      []*Education  `json:"Educations" gorm:"many2many:user_educations"`
 }
 
+type Activity struct {
+	ID     string `json:"ID"`
+	UserId string `gorm:"reference:User;type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	User   *User  `json:"User"`
+	Text   string `json:"Text"`
+}
+
 type Reset struct {
 	ID     string `json:"id" gorm:"type:varchar(191)"`
 	UserId string `gorm:"reference:User;type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`

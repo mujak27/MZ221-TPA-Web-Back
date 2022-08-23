@@ -50,6 +50,12 @@ type User {
   Educations : [Education!]! @goField(forceResolver: true)
 }
 
+type Activity {
+  ID : ID!
+  User : User! @goField(forceResolver: true)
+  Text : String!
+}
+
 # user 1 sends to user 2
 type Message {
   ID : ID!
@@ -106,9 +112,13 @@ type Query {
 
   IsFollow(id1:ID!, id2:ID!) : Boolean!
   IsConnect(id1:ID!, id2:ID!) : ConnectStatus!
+  ConnectionRequest : [User!]!
   ConnectedUsers : [User!]! @auth
+  Activities : [Activity!]! @auth
 
   Messages(id1: ID!, id2: ID!) : [Message!]!
+
+  UsersSuggestion : [User!]!
 }
 
 extend type Mutation {

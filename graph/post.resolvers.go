@@ -14,6 +14,15 @@ import (
 	"github.com/samber/lo"
 )
 
+// Post is the resolver for the Post field.
+func (r *commentResolver) Post(ctx context.Context, obj *model.Comment) (*model.Post, error) {
+	var post *model.Post
+	if err := r.DB.First(&post, "id = ?", obj.PostId).Error; err != nil {
+		return nil, err
+	}
+	return post, nil
+}
+
 // Sender is the resolver for the Sender field.
 func (r *commentResolver) Sender(ctx context.Context, obj *model.Comment) (*model.User, error) {
 	return UserById(r.Resolver, obj.SenderId)
@@ -28,10 +37,29 @@ func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment) ([]*m
 	return comments, nil
 }
 
+// Likes is the resolver for the Likes field.
+func (r *commentResolver) Likes(ctx context.Context, obj *model.Comment) ([]*model.User, error) {
+	var commentLikes []*model.CommentLike
+	if err := r.DB.Find(&commentLikes, "comment_id = ?", obj.ID).Error; err != nil {
+		return nil, err
+	}
+
+	userIds := lo.Map[*model.CommentLike, string](commentLikes, func(x *model.CommentLike, _ int) string {
+		return x.LikeId
+	})
+
+	return UsersById(r.Resolver, userIds)
+}
+
 // CreatePost is the resolver for the CreatePost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.InputPost) (*model.Post, error) {
 	userId := auth.JwtGetValue(ctx).Userid
 	fmt.Println(userId)
+
+	user, err := UserById(r.Resolver, userId)
+	if err != nil {
+		return nil, err
+	}
 
 	post := &model.Post{
 		ID:       uuid.NewString(),
@@ -42,6 +70,9 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.InputPost
 	r.posts = append(r.posts, post)
 
 	r.DB.Create(post)
+
+	activityText := user.FirstName + " " + user.LastName + "has created a new post " + post.Text
+	AddActivity(r.Resolver, userId, activityText)
 
 	return post, nil
 }
@@ -59,7 +90,7 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id string) (*model.Po
 // LikePost is the resolver for the LikePost field.
 func (r *mutationResolver) LikePost(ctx context.Context, id string) (interface{}, error) {
 	myId := getId(ctx)
-	like, _ := r.Query().IsLiked(ctx, id)
+	like, _ := r.Query().IsLikePost(ctx, id)
 	if like {
 		return map[string]interface{}{
 			"status": "have been liked",
@@ -90,6 +121,45 @@ func (r *mutationResolver) UnLikePost(ctx context.Context, id string) (interface
 		}, err
 	}
 	r.DB.Delete(postLike)
+	return map[string]interface{}{
+		"status": "success",
+	}, nil
+}
+
+// LikeComment is the resolver for the LikeComment field.
+func (r *mutationResolver) LikeComment(ctx context.Context, id string) (interface{}, error) {
+	myId := getId(ctx)
+	like, _ := r.Query().IsLikeComment(ctx, id)
+	if like {
+		return map[string]interface{}{
+			"status": "have been liked",
+		}, nil
+	}
+
+	commentLike := &model.CommentLike{
+		ID:        uuid.NewString(),
+		CommentId: id,
+		LikeId:    myId,
+	}
+	r.comment_likes = append(r.comment_likes, commentLike)
+	r.DB.Create(commentLike)
+
+	return map[string]interface{}{
+		"status": "success",
+	}, nil
+}
+
+// UnLikeComment is the resolver for the UnLikeComment field.
+func (r *mutationResolver) UnLikeComment(ctx context.Context, id string) (interface{}, error) {
+	myId := getId(ctx)
+	var commentLike *model.CommentLike
+	err := r.DB.First(&commentLike, "like_id = ? and comment_id = ?", myId, id).Error
+	if err != nil {
+		return map[string]interface{}{
+			"status": "not liked",
+		}, err
+	}
+	r.DB.Delete(commentLike)
 	return map[string]interface{}{
 		"status": "success",
 	}, nil
@@ -216,44 +286,14 @@ func (r *queryResolver) PostsByUserID(ctx context.Context, id string) ([]*model.
 
 // PostsByKeyword is the resolver for the PostsByKeyword field.
 func (r *queryResolver) PostsByKeyword(ctx context.Context, keyword string, limit int, offset int) ([]*model.Post, error) {
-	if keyword == "" {
-		keyword = "%"
-	}
-
-	var idList []string
-	myId := auth.JwtGetValue(ctx).Userid
-	idList = append(idList, myId)
-
-	user, err := UserById(r.Resolver, myId)
+	idList, err := getFriendIds(r.Resolver, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	followIds := lo.Map[*model.User, string](user.Follows, func(x *model.User, _ int) string {
-		return x.ID
-	})
-	idList = append(idList, followIds...)
-
-	var connections []*model.Connection
-	if err := r.DB.Find(&connections, "user1_id = ?", myId).Error; err != nil {
-		return nil, err
+	if keyword == "" {
+		keyword = "%"
 	}
-	connectionIds := lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
-		return x.User2ID
-	})
-	idList = append(idList, connectionIds...)
-
-	if err := r.DB.Find(&connections, "user2_id = ?", myId).Error; err != nil {
-		return nil, err
-	}
-	connectionIds = lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
-		return x.User1ID
-	})
-	idList = append(idList, connectionIds...)
-
-	idList = lo.Uniq[string](idList)
-
-	fmt.Println(idList)
 
 	var posts []*model.Post
 	if err := r.DB.Limit(limit).Offset(offset).Find(&posts, "sender_id IN ? and text like ?", idList, "%"+keyword+"%").Error; err != nil {
@@ -263,8 +303,18 @@ func (r *queryResolver) PostsByKeyword(ctx context.Context, keyword string, limi
 	return posts, nil
 }
 
-// CommentReplies is the resolver for the CommentReplies field.
-func (r *queryResolver) CommentReplies(ctx context.Context, commentID *string, postID string) ([]*model.Comment, error) {
+// Comment is the resolver for the Comment field.
+func (r *queryResolver) Comment(ctx context.Context, id string) (*model.Comment, error) {
+	var comment *model.Comment
+	var err error
+	if err = r.DB.Find(&comment, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return comment, nil
+}
+
+// Comments is the resolver for the Comments field.
+func (r *queryResolver) Comments(ctx context.Context, commentID *string, postID string) ([]*model.Comment, error) {
 	var comments []*model.Comment
 	var err error
 	if commentID != nil {
@@ -279,12 +329,24 @@ func (r *queryResolver) CommentReplies(ctx context.Context, commentID *string, p
 	return comments, nil
 }
 
-// IsLiked is the resolver for the IsLiked field.
-func (r *queryResolver) IsLiked(ctx context.Context, id string) (bool, error) {
+// IsLikePost is the resolver for the IsLikePost field.
+func (r *queryResolver) IsLikePost(ctx context.Context, id string) (bool, error) {
 	myId := getId(ctx)
 
 	var postLike *model.PostLike
 	err := r.DB.First(&postLike, "like_id = ? and post_id = ?", myId, id).Error
+	if err != nil {
+		return false, nil
+	}
+	return true, nil
+}
+
+// IsLikeComment is the resolver for the IsLikeComment field.
+func (r *queryResolver) IsLikeComment(ctx context.Context, id string) (bool, error) {
+	myId := getId(ctx)
+
+	var commentLike *model.CommentLike
+	err := r.DB.First(&commentLike, "like_id = ? and comment_id = ?", myId, id).Error
 	if err != nil {
 		return false, nil
 	}

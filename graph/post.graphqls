@@ -19,8 +19,10 @@ type Post {
 type Comment {
   ID : ID!
   Text : String!
+  Post : Post! @goField(forceResolver: true)
   Sender : User! @goField(forceResolver: true)
   Replies : [Comment!]! @goField(forceResolver: true)
+  Likes: [User!]! @goField(forceResolver: true)
 }
 
 
@@ -31,8 +33,10 @@ extend type Query {
   PostsByUserId(id: ID!): [Post!]! @auth
   PostsByKeyword(Keyword : String!,, Limit: Int!, Offset:Int!):[Post!]!
 
-  CommentReplies(CommentId: ID, PostId : ID!): [Comment!]!
-  IsLiked(id : ID!) : Boolean!
+  Comment(id : ID!): Comment!
+  Comments(CommentId: ID, PostId : ID!): [Comment!]!
+  IsLikePost(id : ID!) : Boolean!
+  IsLikeComment(id : ID!) : Boolean!
 }
 
 extend type Mutation {
@@ -43,6 +47,8 @@ extend type Mutation {
   # AddPostSender(id: ID!): Post!
   LikePost(id: ID!): Any! @auth
   UnLikePost(id: ID!): Any! @auth
+  LikeComment(id: ID!): Any! @auth
+  UnLikeComment(id: ID!): Any! @auth
   CommentPost(input : InputComment):Any! @auth
 }
 

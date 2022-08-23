@@ -18,11 +18,19 @@ type PostLike struct {
 type Comment struct {
 	ID          string     `json:"ID" gorm:"type:varchar(191)"`
 	Text        string     `json:"Text"`
-	SenderId    string     `gorm:"type:varchar(191)"`
+	SenderId    string     `gorm:"type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Sender      *User      `json:"Sender" gorm:"reference:User"`
-	RepliedToId *string    `gorm:"type:varchar(191)"`
+	RepliedToId *string    `gorm:"type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Replies     []*Comment `json:"Replies" gorm:"foreignKey:RepliedToId"`
-	PostId      string
+	PostId      string     `gorm:"type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Post        *Post      `json:"Sender" gorm:"reference:Post"`
+	Likes       []*User    `json:"Likes" gorm:"many2many:comment_likes"`
+}
+
+type CommentLike struct {
+	ID        string `json:"id" gorm:"type:varchar(191)"`
+	CommentId string `gorm:"type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	LikeId    string `gorm:"type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type InputPost struct {

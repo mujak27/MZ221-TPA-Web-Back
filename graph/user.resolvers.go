@@ -20,6 +20,11 @@ func (r *activationResolver) User(ctx context.Context, obj *model.Activation) (*
 	panic(fmt.Errorf("not implemented"))
 }
 
+// User is the resolver for the User field.
+func (r *activityResolver) User(ctx context.Context, obj *model.Activity) (*model.User, error) {
+	return UserById(r.Resolver, obj.UserId)
+}
+
 // User1 is the resolver for the User1 field.
 func (r *connectRequestResolver) User1(ctx context.Context, obj *model.ConnectRequest) (*model.User, error) {
 	panic(fmt.Errorf("not implemented"))
@@ -565,30 +570,45 @@ func (r *queryResolver) IsConnect(ctx context.Context, id1 string, id2 string) (
 	return model.ConnectStatusNotConnected, nil
 }
 
-// ConnectedUsers is the resolver for the ConnectedUsers field.
-func (r *queryResolver) ConnectedUsers(ctx context.Context) ([]*model.User, error) {
-	myId := auth.JwtGetValue(ctx).Userid
+// ConnectionRequest is the resolver for the ConnectionRequest field.
+func (r *queryResolver) ConnectionRequest(ctx context.Context) ([]*model.User, error) {
+	myId := getId(ctx)
 
-	var userIds []string
-	var err error
-	var connections []*model.Connection
-	err = r.DB.Find(&connections, "user1_id = ?", myId).Error
-	if err != nil {
+	var connectRequests []*model.ConnectRequest
+	err := r.DB.Find(&connectRequests, "user1_id = ?", myId).Error
+	if err == nil {
 		return nil, err
 	}
-	userIds = lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
+
+	userIds := lo.Map[*model.ConnectRequest, string](connectRequests, func(x *model.ConnectRequest, _ int) string {
 		return x.User2ID
 	})
+	return UsersById(r.Resolver, userIds)
 
-	err = r.DB.Find(&connections, "user2_id = ?", myId).Error
+}
+
+// ConnectedUsers is the resolver for the ConnectedUsers field.
+func (r *queryResolver) ConnectedUsers(ctx context.Context) ([]*model.User, error) {
+	userIds, err := getFriendIds(r.Resolver, ctx)
 	if err != nil {
 		return nil, err
 	}
-	userIds = append(userIds, lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
-		return x.User1ID
-	})...)
 
 	return UsersById(r.Resolver, userIds)
+}
+
+// Activities is the resolver for the Activities field.
+func (r *queryResolver) Activities(ctx context.Context) ([]*model.Activity, error) {
+	userIds, err := getFriendIds(r.Resolver, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var activities []*model.Activity
+	if err := r.DB.Find(&activities, "user_id IN ?", userIds).Error; err != nil {
+		return nil, err
+	}
+	return activities, nil
 }
 
 // Messages is the resolver for the Messages field.
@@ -598,6 +618,37 @@ func (r *queryResolver) Messages(ctx context.Context, id1 string, id2 string) ([
 		return nil, err
 	}
 	return messages, nil
+}
+
+// UsersSuggestion is the resolver for the UsersSuggestion field.
+func (r *queryResolver) UsersSuggestion(ctx context.Context) ([]*model.User, error) {
+
+	myId := getId(ctx)
+
+	var connections []*model.Connection
+	if err := r.DB.Find(&connections, "user1_id = ? or user2_id = ?", myId, myId).Error; err != nil {
+		return nil, err
+	}
+	connectedUserIds := lo.Map[*model.Connection, []string](connections, func(x *model.Connection, _ int) []string {
+		return []string{x.User2ID, x.User1ID}
+	})
+	flattenConnectedUserIds := lo.Flatten[string](connectedUserIds)
+	flattenConnectedUserIds = lo.Uniq[string](flattenConnectedUserIds)
+
+	if err := r.DB.Find(&connections, "user1_id IN ? or user2_id IN ?", flattenConnectedUserIds, flattenConnectedUserIds).Error; err != nil {
+		return nil, err
+	}
+	suggestedUserIds := lo.Map[*model.Connection, []string](connections, func(x *model.Connection, _ int) []string {
+		return []string{x.User2ID, x.User1ID}
+	})
+	flattenSuggestedUserIds := lo.Flatten[string](suggestedUserIds)
+	flattenSuggestedUserIds = lo.Uniq[string](flattenSuggestedUserIds)
+
+	flattenSuggestedUserIds = lo.Filter[string](flattenSuggestedUserIds, func(x string, _ int) bool {
+		return !lo.Contains[string](append(flattenConnectedUserIds, myId), x)
+	})
+
+	return UsersById(r.Resolver, flattenSuggestedUserIds)
 }
 
 // User is the resolver for the User field.
@@ -662,6 +713,9 @@ func (r *userResolver) Educations(ctx context.Context, obj *model.User) ([]*mode
 // Activation returns generated.ActivationResolver implementation.
 func (r *Resolver) Activation() generated.ActivationResolver { return &activationResolver{r} }
 
+// Activity returns generated.ActivityResolver implementation.
+func (r *Resolver) Activity() generated.ActivityResolver { return &activityResolver{r} }
+
 // ConnectRequest returns generated.ConnectRequestResolver implementation.
 func (r *Resolver) ConnectRequest() generated.ConnectRequestResolver {
 	return &connectRequestResolver{r}
@@ -683,6 +737,7 @@ func (r *Resolver) Reset() generated.ResetResolver { return &resetResolver{r} }
 func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
 
 type activationResolver struct{ *Resolver }
+type activityResolver struct{ *Resolver }
 type connectRequestResolver struct{ *Resolver }
 type connectionResolver struct{ *Resolver }
 type messageResolver struct{ *Resolver }

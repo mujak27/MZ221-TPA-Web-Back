@@ -25,5 +25,9 @@ institute education, message
 22 aug
 update profile (except password & email), update profile & background img, forget reset password, like, comment
 
+8
+23 aug
+comment, reply comment, comment likes, notification, users suggestion, connection request list
+
 
 problems
