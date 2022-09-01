@@ -51,7 +51,7 @@ func main() {
 
 	// dsn := "root:@tcp(127.0.0.1:3306)/tpaweb?charset=utf8mb4&parseTime=True&loc=Local"
 	// db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	dsn := "host=localhost user=postgres password=pw dbname=tpaweb port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	dsn := "host=localhost user=postgres password=mysecretpassword dbname=tpaweb port=5433 sslmode=disable TimeZone=Asia/Shanghai"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
