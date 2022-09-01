@@ -118,6 +118,9 @@ type ConnectRequest {
 # }
 
 type Query {
+
+  CountUser(Keyword : String): Int! @auth
+
   user(id: ID!): User!
   UsersByName(name: String, Limit:Int!, Offset:Int!): [User!]!
   UserByLink(link : String!) : User!

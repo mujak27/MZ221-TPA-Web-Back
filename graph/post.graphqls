@@ -31,6 +31,9 @@ type Comment {
 
 
 extend type Query {
+
+  CountPost(Keyword : String):Int! @auth
+
   Post(id: ID!): Post!
   Posts(Limit:Int!, Offset:Int!): [Post!]! @auth
   PostsByUserId(id: ID!): [Post!]! @auth

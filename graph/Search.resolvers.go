@@ -26,6 +26,9 @@ func (r *queryResolver) Search(ctx context.Context, keyword string, limit int, o
 	posts, _ := r.PostsByKeyword(ctx, keyword, limit, offset)
 	search.Posts = posts
 
+	fmt.Println(users)
+	fmt.Println(search)
+
 	return search, nil
 }
 
@@ -35,10 +38,15 @@ func (r *searchResolver) Users(ctx context.Context, obj *model.Search) ([]*model
 		return x.ID
 	})
 
+	if len(userIds) == 0 {
+		return nil, nil
+	}
+
 	var users []*model.User
 	if err := r.DB.Find(&users, userIds).Error; err != nil {
 		return nil, err
 	}
+	fmt.Println(users)
 	return users, nil
 }
 
@@ -47,6 +55,9 @@ func (r *searchResolver) Posts(ctx context.Context, obj *model.Search) ([]*model
 	postIds := lo.Map[*model.Post, string](obj.Posts, func(x *model.Post, _ int) string {
 		return x.ID
 	})
+	if len(postIds) == 0 {
+		return nil, nil
+	}
 
 	var posts []*model.Post
 	if err := r.DB.Find(&posts, postIds).Error; err != nil {

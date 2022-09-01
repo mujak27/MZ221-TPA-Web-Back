@@ -179,6 +179,8 @@ type ComplexityRoot struct {
 		Comments          func(childComplexity int, commentID *string, postID string) int
 		ConnectedUsers    func(childComplexity int) int
 		ConnectionRequest func(childComplexity int) int
+		CountPost         func(childComplexity int, keyword *string) int
+		CountUser         func(childComplexity int, keyword *string) int
 		IsConnect         func(childComplexity int, id1 string, id2 string) int
 		IsFollow          func(childComplexity int, id1 string, id2 string) int
 		IsLikeComment     func(childComplexity int, id string) int
@@ -315,6 +317,7 @@ type PostResolver interface {
 	CreatedAt(ctx context.Context, obj *model.Post) (string, error)
 }
 type QueryResolver interface {
+	CountUser(ctx context.Context, keyword *string) (int, error)
 	User(ctx context.Context, id string) (*model.User, error)
 	UsersByName(ctx context.Context, name *string, limit int, offset int) ([]*model.User, error)
 	UserByLink(ctx context.Context, link string) (*model.User, error)
@@ -329,6 +332,7 @@ type QueryResolver interface {
 	UsersSuggestion(ctx context.Context) ([]*model.User, error)
 	Jobs(ctx context.Context) ([]*model.Job, error)
 	Search(ctx context.Context, keyword string, limit int, offset int) (*model.Search, error)
+	CountPost(ctx context.Context, keyword *string) (int, error)
 	Post(ctx context.Context, id string) (*model.Post, error)
 	Posts(ctx context.Context, limit int, offset int) ([]*model.Post, error)
 	PostsByUserID(ctx context.Context, id string) ([]*model.Post, error)
@@ -1196,6 +1200,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ConnectionRequest(childComplexity), true
 
+	case "Query.CountPost":
+		if e.complexity.Query.CountPost == nil {
+			break
+		}
+
+		args, err := ec.field_Query_CountPost_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CountPost(childComplexity, args["Keyword"].(*string)), true
+
+	case "Query.CountUser":
+		if e.complexity.Query.CountUser == nil {
+			break
+		}
+
+		args, err := ec.field_Query_CountUser_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CountUser(childComplexity, args["Keyword"].(*string)), true
+
 	case "Query.IsConnect":
 		if e.complexity.Query.IsConnect == nil {
 			break
@@ -1704,6 +1732,9 @@ type Comment {
 
 
 extend type Query {
+
+  CountPost(Keyword : String):Int! @auth
+
   Post(id: ID!): Post!
   Posts(Limit:Int!, Offset:Int!): [Post!]! @auth
   PostsByUserId(id: ID!): [Post!]! @auth
@@ -1860,6 +1891,9 @@ type ConnectRequest {
 # }
 
 type Query {
+
+  CountUser(Keyword : String): Int! @auth
+
   user(id: ID!): User!
   UsersByName(name: String, Limit:Int!, Offset:Int!): [User!]!
   UserByLink(link : String!) : User!
@@ -2727,6 +2761,36 @@ func (ec *executionContext) field_Query_Comments_args(ctx context.Context, rawAr
 		}
 	}
 	args["PostId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_CountPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Keyword"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Keyword"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Keyword"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_CountUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Keyword"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Keyword"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Keyword"] = arg0
 	return args, nil
 }
 
@@ -8017,6 +8081,81 @@ func (ec *executionContext) fieldContext_Post_CreatedAt(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_CountUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_CountUser(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().CountUser(rctx, fc.Args["Keyword"].(*string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(int); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be int`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_CountUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_CountUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_user(ctx, field)
 	if err != nil {
@@ -9140,6 +9279,81 @@ func (ec *executionContext) fieldContext_Query_Search(ctx context.Context, field
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_Search_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_CountPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_CountPost(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().CountPost(rctx, fc.Args["Keyword"].(*string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(int); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be int`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_CountPost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_CountPost_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -14914,6 +15128,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "CountUser":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_CountUser(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "user":
 			field := field
 
@@ -15223,6 +15460,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_Search(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "CountPost":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_CountPost(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

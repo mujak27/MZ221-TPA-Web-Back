@@ -628,6 +628,12 @@ func (r *mutationResolver) AddJob(ctx context.Context, text string) (model.Mutat
 	return model.MutationStatusSuccess, nil
 }
 
+// CountUser is the resolver for the CountUser field.
+func (r *queryResolver) CountUser(ctx context.Context, keyword *string) (int, error) {
+	users, nil := r.UsersByName(ctx, keyword, 1000000000, 0)
+	return len(users), nil
+}
+
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
 	return UserById(r.Resolver, id)
@@ -639,10 +645,13 @@ func (r *queryResolver) UsersByName(ctx context.Context, name *string, limit int
 		*name = "%"
 	}
 
+	fmt.Println(*name)
 	var users []*model.User
-	if err := r.DB.Limit(limit).Offset(offset).Find(&users, "concat(first_name, mid_name, last_name) like ?", "%"+*name+"%").Error; err != nil {
+	if err := r.DB.Limit(limit).Offset(offset).Find(&users, "concat(first_name,mid_name,last_name) like ?", "%"+*name+"%").Error; err != nil {
 		return nil, err
 	}
+	fmt.Println(*name)
+	fmt.Println(users)
 	return users, nil
 }
 

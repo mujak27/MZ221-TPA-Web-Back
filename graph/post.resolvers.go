@@ -230,6 +230,12 @@ func (r *postResolver) CreatedAt(ctx context.Context, obj *model.Post) (string, 
 	panic(fmt.Errorf("not implemented"))
 }
 
+// CountPost is the resolver for the CountPost field.
+func (r *queryResolver) CountPost(ctx context.Context, keyword *string) (int, error) {
+	posts, nil := r.PostsByKeyword(ctx, *keyword, 1000000000, 0)
+	return len(posts), nil
+}
+
 // Post is the resolver for the Post field.
 func (r *queryResolver) Post(ctx context.Context, id string) (*model.Post, error) {
 	var post *model.Post
