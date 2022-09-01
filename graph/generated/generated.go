@@ -41,6 +41,7 @@ type ResolverRoot interface {
 	Comment() CommentResolver
 	ConnectRequest() ConnectRequestResolver
 	Connection() ConnectionResolver
+	Job() JobResolver
 	Message() MessageResolver
 	Mutation() MutationResolver
 	Post() PostResolver
@@ -67,12 +68,13 @@ type ComplexityRoot struct {
 	}
 
 	Comment struct {
-		ID      func(childComplexity int) int
-		Likes   func(childComplexity int) int
-		Post    func(childComplexity int) int
-		Replies func(childComplexity int) int
-		Sender  func(childComplexity int) int
-		Text    func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Likes     func(childComplexity int) int
+		Post      func(childComplexity int) int
+		Replies   func(childComplexity int) int
+		Sender    func(childComplexity int) int
+		Text      func(childComplexity int) int
 	}
 
 	ConnectRequest struct {
@@ -105,6 +107,12 @@ type ComplexityRoot struct {
 		StartedAt func(childComplexity int) int
 	}
 
+	Job struct {
+		ID   func(childComplexity int) int
+		Text func(childComplexity int) int
+		User func(childComplexity int) int
+	}
+
 	Message struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
@@ -118,14 +126,23 @@ type ComplexityRoot struct {
 		Activate             func(childComplexity int, id string) int
 		AddEducation         func(childComplexity int, input model.InputEducation) int
 		AddExperience        func(childComplexity int, input model.InputExperience) int
+		AddJob               func(childComplexity int, text string) int
+		AnswerCandidates     func(childComplexity int, id string, input model.InputCandidates) int
 		CommentPost          func(childComplexity int, input *model.InputComment) int
 		CreatePost           func(childComplexity int, input model.InputPost) int
 		DeleteConnectRequest func(childComplexity int, id1 string, id2 string) int
 		DeletePost           func(childComplexity int, id string) int
+		FirstFillData        func(childComplexity int, input model.InputUser) int
+		FirstUpdateProfile   func(childComplexity int, input model.InputFirstUpdateProfile) int
 		Follow               func(childComplexity int, id1 string, id2 string) int
 		ForgetPassword       func(childComplexity int, email string) int
+		HangUp               func(childComplexity int, id string) int
 		LikeComment          func(childComplexity int, id string) int
 		LikePost             func(childComplexity int, id string) int
+		Login                func(childComplexity int, input model.InputLogin) int
+		LoginRegisWithSso    func(childComplexity int, googleToken string) int
+		OfferCandidates      func(childComplexity int, id string, input model.InputCandidates) int
+		Register             func(childComplexity int, input *model.InputRegister) int
 		RemoveEducation      func(childComplexity int, id string) int
 		RemoveExperience     func(childComplexity int, id string) int
 		ResetPassword        func(childComplexity int, id string, password string) int
@@ -141,14 +158,17 @@ type ComplexityRoot struct {
 		UpdatePost           func(childComplexity int, id string) int
 		UpdateProfile        func(childComplexity int, input model.InputUser) int
 		Visit                func(childComplexity int, id string) int
+		VisitByLink          func(childComplexity int, profileLink string) int
 	}
 
 	Post struct {
-		Comments func(childComplexity int) int
-		ID       func(childComplexity int) int
-		Likes    func(childComplexity int) int
-		Sender   func(childComplexity int) int
-		Text     func(childComplexity int) int
+		AttachmentLink func(childComplexity int) int
+		Comments       func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Likes          func(childComplexity int) int
+		Sender         func(childComplexity int) int
+		Text           func(childComplexity int) int
 	}
 
 	Query struct {
@@ -163,17 +183,18 @@ type ComplexityRoot struct {
 		IsFollow          func(childComplexity int, id1 string, id2 string) int
 		IsLikeComment     func(childComplexity int, id string) int
 		IsLikePost        func(childComplexity int, id string) int
-		Login             func(childComplexity int, input model.InputLogin) int
+		Jobs              func(childComplexity int) int
 		Messages          func(childComplexity int, id1 string, id2 string) int
 		Post              func(childComplexity int, id string) int
 		Posts             func(childComplexity int, limit int, offset int) int
 		PostsByKeyword    func(childComplexity int, keyword string, limit int, offset int) int
 		PostsByUserID     func(childComplexity int, id string) int
-		Register          func(childComplexity int, input *model.InputRegister) int
 		Search            func(childComplexity int, keyword string, limit int, offset int) int
 		User              func(childComplexity int, id string) int
+		UserByLink        func(childComplexity int, link string) int
 		UsersByName       func(childComplexity int, name *string, limit int, offset int) int
 		UsersSuggestion   func(childComplexity int) int
+		VideoCallStatus   func(childComplexity int, id string) int
 	}
 
 	Reset struct {
@@ -194,9 +215,11 @@ type ComplexityRoot struct {
 		Experiences     func(childComplexity int) int
 		FirstName       func(childComplexity int) int
 		Follows         func(childComplexity int) int
+		HasFilledData   func(childComplexity int) int
 		Headline        func(childComplexity int) int
 		ID              func(childComplexity int) int
 		IsActive        func(childComplexity int) int
+		IsSso           func(childComplexity int) int
 		LastName        func(childComplexity int) int
 		Location        func(childComplexity int) int
 		MidName         func(childComplexity int) int
@@ -205,6 +228,14 @@ type ComplexityRoot struct {
 		ProfilePhoto    func(childComplexity int) int
 		Pronoun         func(childComplexity int) int
 		Visits          func(childComplexity int) int
+	}
+
+	VideoCall struct {
+		AnswerCandidates func(childComplexity int) int
+		ID               func(childComplexity int) int
+		OfferCandidates  func(childComplexity int) int
+		User1            func(childComplexity int) int
+		User2            func(childComplexity int) int
 	}
 }
 
@@ -219,6 +250,7 @@ type CommentResolver interface {
 	Sender(ctx context.Context, obj *model.Comment) (*model.User, error)
 	Replies(ctx context.Context, obj *model.Comment) ([]*model.Comment, error)
 	Likes(ctx context.Context, obj *model.Comment) ([]*model.User, error)
+	CreatedAt(ctx context.Context, obj *model.Comment) (string, error)
 }
 type ConnectRequestResolver interface {
 	User1(ctx context.Context, obj *model.ConnectRequest) (*model.User, error)
@@ -227,6 +259,9 @@ type ConnectRequestResolver interface {
 type ConnectionResolver interface {
 	User1(ctx context.Context, obj *model.Connection) (*model.User, error)
 	User2(ctx context.Context, obj *model.Connection) (*model.User, error)
+}
+type JobResolver interface {
+	User(ctx context.Context, obj *model.Job) (*model.User, error)
 }
 type MessageResolver interface {
 	User1(ctx context.Context, obj *model.Message) (*model.User, error)
@@ -242,36 +277,47 @@ type MutationResolver interface {
 	LikeComment(ctx context.Context, id string) (interface{}, error)
 	UnLikeComment(ctx context.Context, id string) (interface{}, error)
 	CommentPost(ctx context.Context, input *model.InputComment) (interface{}, error)
-	UpdateProfile(ctx context.Context, input model.InputUser) (*model.User, error)
-	ForgetPassword(ctx context.Context, email string) (interface{}, error)
-	ResetPassword(ctx context.Context, id string, password string) (interface{}, error)
-	SendActivation(ctx context.Context, id string) (interface{}, error)
-	Activate(ctx context.Context, id string) (interface{}, error)
-	Follow(ctx context.Context, id1 string, id2 string) (interface{}, error)
-	UnFollow(ctx context.Context, id1 string, id2 string) (interface{}, error)
-	SendConnectRequest(ctx context.Context, id1 string, id2 string) (interface{}, error)
-	DeleteConnectRequest(ctx context.Context, id1 string, id2 string) (interface{}, error)
-	AcceptConnectRequest(ctx context.Context, id1 string, id2 string) (interface{}, error)
-	UnConnect(ctx context.Context, id1 string, id2 string) (interface{}, error)
-	SendMessage(ctx context.Context, input model.InputMessage) (interface{}, error)
-	Visit(ctx context.Context, id string) (interface{}, error)
-	AddEducation(ctx context.Context, input model.InputEducation) (*model.Education, error)
-	UpdateEducation(ctx context.Context, id string, input model.InputEducation) (*model.Education, error)
-	RemoveEducation(ctx context.Context, id string) (interface{}, error)
-	AddExperience(ctx context.Context, input model.InputExperience) (*model.Experience, error)
-	UpdateExperience(ctx context.Context, id string, input model.InputExperience) (*model.Experience, error)
-	RemoveExperience(ctx context.Context, id string) (interface{}, error)
+	LoginRegisWithSso(ctx context.Context, googleToken string) (string, error)
+	Login(ctx context.Context, input model.InputLogin) (string, error)
+	Register(ctx context.Context, input *model.InputRegister) (string, error)
+	FirstUpdateProfile(ctx context.Context, input model.InputFirstUpdateProfile) (model.MutationStatus, error)
+	UpdateProfile(ctx context.Context, input model.InputUser) (model.MutationStatus, error)
+	ForgetPassword(ctx context.Context, email string) (model.MutationStatus, error)
+	ResetPassword(ctx context.Context, id string, password string) (model.MutationStatus, error)
+	FirstFillData(ctx context.Context, input model.InputUser) (model.MutationStatus, error)
+	SendActivation(ctx context.Context, id string) (model.MutationStatus, error)
+	Activate(ctx context.Context, id string) (model.MutationStatus, error)
+	Follow(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
+	UnFollow(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
+	SendConnectRequest(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
+	DeleteConnectRequest(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
+	AcceptConnectRequest(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
+	UnConnect(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
+	SendMessage(ctx context.Context, input model.InputMessage) (model.MutationStatus, error)
+	Visit(ctx context.Context, id string) (model.MutationStatus, error)
+	VisitByLink(ctx context.Context, profileLink string) (model.MutationStatus, error)
+	AddEducation(ctx context.Context, input model.InputEducation) (model.MutationStatus, error)
+	UpdateEducation(ctx context.Context, id string, input model.InputEducation) (model.MutationStatus, error)
+	RemoveEducation(ctx context.Context, id string) (model.MutationStatus, error)
+	AddExperience(ctx context.Context, input model.InputExperience) (model.MutationStatus, error)
+	UpdateExperience(ctx context.Context, id string, input model.InputExperience) (model.MutationStatus, error)
+	RemoveExperience(ctx context.Context, id string) (model.MutationStatus, error)
+	AddJob(ctx context.Context, text string) (model.MutationStatus, error)
+	OfferCandidates(ctx context.Context, id string, input model.InputCandidates) (interface{}, error)
+	AnswerCandidates(ctx context.Context, id string, input model.InputCandidates) (interface{}, error)
+	HangUp(ctx context.Context, id string) (interface{}, error)
 }
 type PostResolver interface {
 	Sender(ctx context.Context, obj *model.Post) (*model.User, error)
 	Comments(ctx context.Context, obj *model.Post) ([]*model.Comment, error)
 	Likes(ctx context.Context, obj *model.Post) ([]*model.User, error)
+
+	CreatedAt(ctx context.Context, obj *model.Post) (string, error)
 }
 type QueryResolver interface {
 	User(ctx context.Context, id string) (*model.User, error)
 	UsersByName(ctx context.Context, name *string, limit int, offset int) ([]*model.User, error)
-	Login(ctx context.Context, input model.InputLogin) (interface{}, error)
-	Register(ctx context.Context, input *model.InputRegister) (interface{}, error)
+	UserByLink(ctx context.Context, link string) (*model.User, error)
 	Activation(ctx context.Context, id string) (*model.Activation, error)
 	CheckReset(ctx context.Context, id string) (*model.User, error)
 	IsFollow(ctx context.Context, id1 string, id2 string) (bool, error)
@@ -281,6 +327,7 @@ type QueryResolver interface {
 	Activities(ctx context.Context) ([]*model.Activity, error)
 	Messages(ctx context.Context, id1 string, id2 string) ([]*model.Message, error)
 	UsersSuggestion(ctx context.Context) ([]*model.User, error)
+	Jobs(ctx context.Context) ([]*model.Job, error)
 	Search(ctx context.Context, keyword string, limit int, offset int) (*model.Search, error)
 	Post(ctx context.Context, id string) (*model.Post, error)
 	Posts(ctx context.Context, limit int, offset int) ([]*model.Post, error)
@@ -290,6 +337,7 @@ type QueryResolver interface {
 	Comments(ctx context.Context, commentID *string, postID string) ([]*model.Comment, error)
 	IsLikePost(ctx context.Context, id string) (bool, error)
 	IsLikeComment(ctx context.Context, id string) (bool, error)
+	VideoCallStatus(ctx context.Context, id string) (model.VideoCallStatus, error)
 }
 type ResetResolver interface {
 	User(ctx context.Context, obj *model.Reset) (*model.User, error)
@@ -354,6 +402,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Activity.User(childComplexity), true
+
+	case "Comment.CreatedAt":
+		if e.complexity.Comment.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Comment.CreatedAt(childComplexity), true
 
 	case "Comment.ID":
 		if e.complexity.Comment.ID == nil {
@@ -523,6 +578,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Experience.StartedAt(childComplexity), true
 
+	case "Job.ID":
+		if e.complexity.Job.ID == nil {
+			break
+		}
+
+		return e.complexity.Job.ID(childComplexity), true
+
+	case "Job.Text":
+		if e.complexity.Job.Text == nil {
+			break
+		}
+
+		return e.complexity.Job.Text(childComplexity), true
+
+	case "Job.User":
+		if e.complexity.Job.User == nil {
+			break
+		}
+
+		return e.complexity.Job.User(childComplexity), true
+
 	case "Message.CreatedAt":
 		if e.complexity.Message.CreatedAt == nil {
 			break
@@ -606,6 +682,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddExperience(childComplexity, args["input"].(model.InputExperience)), true
 
+	case "Mutation.AddJob":
+		if e.complexity.Mutation.AddJob == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_AddJob_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddJob(childComplexity, args["Text"].(string)), true
+
+	case "Mutation.AnswerCandidates":
+		if e.complexity.Mutation.AnswerCandidates == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_AnswerCandidates_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AnswerCandidates(childComplexity, args["id"].(string), args["input"].(model.InputCandidates)), true
+
 	case "Mutation.CommentPost":
 		if e.complexity.Mutation.CommentPost == nil {
 			break
@@ -654,6 +754,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeletePost(childComplexity, args["id"].(string)), true
 
+	case "Mutation.FirstFillData":
+		if e.complexity.Mutation.FirstFillData == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_FirstFillData_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.FirstFillData(childComplexity, args["input"].(model.InputUser)), true
+
+	case "Mutation.FirstUpdateProfile":
+		if e.complexity.Mutation.FirstUpdateProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_FirstUpdateProfile_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.FirstUpdateProfile(childComplexity, args["input"].(model.InputFirstUpdateProfile)), true
+
 	case "Mutation.Follow":
 		if e.complexity.Mutation.Follow == nil {
 			break
@@ -678,6 +802,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ForgetPassword(childComplexity, args["email"].(string)), true
 
+	case "Mutation.HangUp":
+		if e.complexity.Mutation.HangUp == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_HangUp_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.HangUp(childComplexity, args["id"].(string)), true
+
 	case "Mutation.LikeComment":
 		if e.complexity.Mutation.LikeComment == nil {
 			break
@@ -701,6 +837,54 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.LikePost(childComplexity, args["id"].(string)), true
+
+	case "Mutation.Login":
+		if e.complexity.Mutation.Login == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_Login_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Login(childComplexity, args["input"].(model.InputLogin)), true
+
+	case "Mutation.LoginRegisWithSSO":
+		if e.complexity.Mutation.LoginRegisWithSso == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_LoginRegisWithSSO_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LoginRegisWithSso(childComplexity, args["GoogleToken"].(string)), true
+
+	case "Mutation.OfferCandidates":
+		if e.complexity.Mutation.OfferCandidates == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_OfferCandidates_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.OfferCandidates(childComplexity, args["id"].(string), args["input"].(model.InputCandidates)), true
+
+	case "Mutation.Register":
+		if e.complexity.Mutation.Register == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_Register_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Register(childComplexity, args["input"].(*model.InputRegister)), true
 
 	case "Mutation.RemoveEducation":
 		if e.complexity.Mutation.RemoveEducation == nil {
@@ -882,12 +1066,38 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Visit(childComplexity, args["id"].(string)), true
 
+	case "Mutation.VisitByLink":
+		if e.complexity.Mutation.VisitByLink == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_VisitByLink_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.VisitByLink(childComplexity, args["ProfileLink"].(string)), true
+
+	case "Post.AttachmentLink":
+		if e.complexity.Post.AttachmentLink == nil {
+			break
+		}
+
+		return e.complexity.Post.AttachmentLink(childComplexity), true
+
 	case "Post.Comments":
 		if e.complexity.Post.Comments == nil {
 			break
 		}
 
 		return e.complexity.Post.Comments(childComplexity), true
+
+	case "Post.CreatedAt":
+		if e.complexity.Post.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Post.CreatedAt(childComplexity), true
 
 	case "Post.ID":
 		if e.complexity.Post.ID == nil {
@@ -1034,17 +1244,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.IsLikePost(childComplexity, args["id"].(string)), true
 
-	case "Query.login":
-		if e.complexity.Query.Login == nil {
+	case "Query.Jobs":
+		if e.complexity.Query.Jobs == nil {
 			break
 		}
 
-		args, err := ec.field_Query_login_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Login(childComplexity, args["input"].(model.InputLogin)), true
+		return e.complexity.Query.Jobs(childComplexity), true
 
 	case "Query.Messages":
 		if e.complexity.Query.Messages == nil {
@@ -1106,18 +1311,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.PostsByUserID(childComplexity, args["id"].(string)), true
 
-	case "Query.register":
-		if e.complexity.Query.Register == nil {
-			break
-		}
-
-		args, err := ec.field_Query_register_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Register(childComplexity, args["input"].(*model.InputRegister)), true
-
 	case "Query.Search":
 		if e.complexity.Query.Search == nil {
 			break
@@ -1142,6 +1335,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.User(childComplexity, args["id"].(string)), true
 
+	case "Query.UserByLink":
+		if e.complexity.Query.UserByLink == nil {
+			break
+		}
+
+		args, err := ec.field_Query_UserByLink_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserByLink(childComplexity, args["link"].(string)), true
+
 	case "Query.UsersByName":
 		if e.complexity.Query.UsersByName == nil {
 			break
@@ -1160,6 +1365,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.UsersSuggestion(childComplexity), true
+
+	case "Query.VideoCallStatus":
+		if e.complexity.Query.VideoCallStatus == nil {
+			break
+		}
+
+		args, err := ec.field_Query_VideoCallStatus_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.VideoCallStatus(childComplexity, args["id"].(string)), true
 
 	case "Reset.ID":
 		if e.complexity.Reset.ID == nil {
@@ -1238,6 +1455,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Follows(childComplexity), true
 
+	case "User.HasFilledData":
+		if e.complexity.User.HasFilledData == nil {
+			break
+		}
+
+		return e.complexity.User.HasFilledData(childComplexity), true
+
 	case "User.Headline":
 		if e.complexity.User.Headline == nil {
 			break
@@ -1258,6 +1482,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.IsActive(childComplexity), true
+
+	case "User.IsSso":
+		if e.complexity.User.IsSso == nil {
+			break
+		}
+
+		return e.complexity.User.IsSso(childComplexity), true
 
 	case "User.LastName":
 		if e.complexity.User.LastName == nil {
@@ -1315,6 +1546,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Visits(childComplexity), true
 
+	case "VideoCall.AnswerCandidates":
+		if e.complexity.VideoCall.AnswerCandidates == nil {
+			break
+		}
+
+		return e.complexity.VideoCall.AnswerCandidates(childComplexity), true
+
+	case "VideoCall.ID":
+		if e.complexity.VideoCall.ID == nil {
+			break
+		}
+
+		return e.complexity.VideoCall.ID(childComplexity), true
+
+	case "VideoCall.OfferCandidates":
+		if e.complexity.VideoCall.OfferCandidates == nil {
+			break
+		}
+
+		return e.complexity.VideoCall.OfferCandidates(childComplexity), true
+
+	case "VideoCall.User1":
+		if e.complexity.VideoCall.User1 == nil {
+			break
+		}
+
+		return e.complexity.VideoCall.User1(childComplexity), true
+
+	case "VideoCall.User2":
+		if e.complexity.VideoCall.User2 == nil {
+			break
+		}
+
+		return e.complexity.VideoCall.User2(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -1323,9 +1589,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputInputCandidates,
 		ec.unmarshalInputInputComment,
 		ec.unmarshalInputInputEducation,
 		ec.unmarshalInputInputExperience,
+		ec.unmarshalInputInputFirstUpdateProfile,
 		ec.unmarshalInputInputLogin,
 		ec.unmarshalInputInputMessage,
 		ec.unmarshalInputInputPost,
@@ -1419,6 +1687,8 @@ type Post {
   Sender: User! @goField(forceResolver: true)
   Comments: [Comment!]! @goField(forceResolver: true)
   Likes: [User!]! @goField(forceResolver: true)
+  AttachmentLink : String
+  CreatedAt : String!
 }
 
 type Comment {
@@ -1428,6 +1698,7 @@ type Comment {
   Sender : User! @goField(forceResolver: true)
   Replies : [Comment!]! @goField(forceResolver: true)
   Likes: [User!]! @goField(forceResolver: true)
+  CreatedAt : String!
 }
 
 
@@ -1458,7 +1729,8 @@ extend type Mutation {
 }
 
 input InputPost {
-  text: String!
+  Text: String!
+  AttachmentLink: String!
 }
 
 input InputComment {
@@ -1477,6 +1749,13 @@ enum ConnectStatus {
   SentByUser1
   SentByUser2
   NotConnected
+}
+
+enum MutationStatus {
+  Success
+  NotFound
+  AlreadyExist
+  Error
 }
 
 type Experience {
@@ -1518,6 +1797,15 @@ type User {
   Follows : [User!]! @goField(forceResolver: true)
   Experiences : [Experience!]! @goField(forceResolver: true)
   Educations : [Education!]! @goField(forceResolver: true)
+
+  IsSso : Boolean!
+  HasFilledData : Boolean!
+}
+
+type Job {
+  ID : ID!
+  User : User! @goField(forceResolver: true)
+  Text : String!
 }
 
 type Activity {
@@ -1574,9 +1862,8 @@ type ConnectRequest {
 type Query {
   user(id: ID!): User!
   UsersByName(name: String, Limit:Int!, Offset:Int!): [User!]!
+  UserByLink(link : String!) : User!
 
-  login(input : InputLogin!) : Any!
-  register(input : InputRegister) : Any!
   Activation(id: ID!): Activation!
   CheckReset(id : ID!) : User!
 
@@ -1588,36 +1875,47 @@ type Query {
 
   Messages(id1: ID!, id2: ID!) : [Message!]!
 
-  UsersSuggestion : [User!]!
+  UsersSuggestion : [User!]! @auth
+
+  Jobs : [Job!]! @auth
 }
 
 extend type Mutation {
-  UpdateProfile(input : InputUser!) : User!
-  ForgetPassword(email : String!) : Any!
-  ResetPassword(id : ID!, password : String!) : Any!
+  LoginRegisWithSSO(GoogleToken : String!) : String!
+  Login(input : InputLogin!) : String!
+  Register(input : InputRegister) : String!
 
-  SendActivation(id: ID!): Any!
-  Activate(id: ID!): Any!
+  FirstUpdateProfile(input : InputFirstUpdateProfile!) : MutationStatus!
+  UpdateProfile(input : InputUser!) : MutationStatus!
+  ForgetPassword(email : String!) : MutationStatus!
+  ResetPassword(id: ID!, password : String!) : MutationStatus!
+  FirstFillData(input : InputUser!) : MutationStatus!
 
-  Follow(id1: ID!, id2: ID!): Any!
-  UnFollow(id1: ID!, id2: ID!): Any!
+  SendActivation(id: ID!): MutationStatus!
+  Activate(id: ID!): MutationStatus!
 
-  SendConnectRequest(id1: ID!, id2: ID!): Any!
-  DeleteConnectRequest(id1: ID!, id2: ID!): Any!
-  AcceptConnectRequest(id1: ID!, id2: ID!): Any!
-  UnConnect(id1: ID!, id2: ID!): Any!
+  Follow(id1: ID!, id2: ID!): MutationStatus!
+  UnFollow(id1: ID!, id2: ID!): MutationStatus!
 
-  SendMessage(input : InputMessage!): Any!
+  SendConnectRequest(id1: ID!, id2: ID!): MutationStatus!
+  DeleteConnectRequest(id1: ID!, id2: ID!): MutationStatus!
+  AcceptConnectRequest(id1: ID!, id2: ID!): MutationStatus!
+  UnConnect(id1: ID!, id2: ID!): MutationStatus!
 
-  Visit(id: ID!): Any! @auth
+  SendMessage(input : InputMessage!): MutationStatus!
 
-  AddEducation(input : InputEducation!): Education! @auth
-  UpdateEducation(id:ID!, input : InputEducation!): Education! @auth
-  RemoveEducation(id: ID!): Any! @auth
+  Visit(id: ID!): MutationStatus! @auth
+  VisitByLink(ProfileLink: String!): MutationStatus! @auth
 
-  AddExperience(input : InputExperience!): Experience! @auth
-  UpdateExperience(id:ID!, input : InputExperience!): Experience! @auth
-  RemoveExperience(id: ID!): Any! @auth
+  AddEducation(input : InputEducation!): MutationStatus! @auth
+  UpdateEducation(id:ID!, input : InputEducation!): MutationStatus! @auth
+  RemoveEducation(id: ID!): MutationStatus! @auth
+
+  AddExperience(input : InputExperience!): MutationStatus! @auth
+  UpdateExperience(id:ID!, input : InputExperience!): MutationStatus! @auth
+  RemoveExperience(id: ID!): MutationStatus! @auth
+
+  AddJob(Text : String!) : MutationStatus! @auth
 }
 
 input InputMessage {
@@ -1651,9 +1949,6 @@ input InputLogin {
 input InputRegister {
   Email : String!
   Password : String!
-  FirstName : String!
-  LastName : String!
-  MidName : String!
 }
 
 input InputUser{
@@ -1666,6 +1961,44 @@ input InputUser{
   Pronoun : String!
   About : String!
   Location : String!
+  ProfileLink : String!
+}
+
+input InputFirstUpdateProfile {
+  FirstName : String!
+  LastName : String!
+  MidName : String!
+  ProfilePhoto : String!
+  Pronoun : String!
+}`, BuiltIn: false},
+	{Name: "../videoCall.graphqls", Input: `
+type VideoCall {
+  ID : ID!
+  User1 : User!
+  User2 : User!
+  OfferCandidates : [String!]!
+  AnswerCandidates : [String!]!
+}
+
+enum VideoCallStatus {
+  Null
+  WaitingUser1
+  WaitingUser2
+  OnGoing
+}
+
+extend type Query {
+  VideoCallStatus(id : ID!) : VideoCallStatus!
+}
+
+extend type Mutation {
+  OfferCandidates(id : ID!, input : InputCandidates!) : Any!
+  AnswerCandidates(id : ID!, input : InputCandidates!) : Any!
+  HangUp(id : ID!) : Any!
+}
+
+input InputCandidates {
+  userId : ID!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -1743,6 +2076,45 @@ func (ec *executionContext) field_Mutation_AddExperience_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_AddJob_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["Text"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Text"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Text"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_AnswerCandidates_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 model.InputCandidates
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg1, err = ec.unmarshalNInputCandidates2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputCandidates(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_CommentPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1812,6 +2184,36 @@ func (ec *executionContext) field_Mutation_DeletePost_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_FirstFillData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.InputUser
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNInputUser2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputUser(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_FirstUpdateProfile_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.InputFirstUpdateProfile
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNInputFirstUpdateProfile2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputFirstUpdateProfile(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_Follow_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1851,6 +2253,21 @@ func (ec *executionContext) field_Mutation_ForgetPassword_args(ctx context.Conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_HangUp_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_LikeComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1878,6 +2295,75 @@ func (ec *executionContext) field_Mutation_LikePost_args(ctx context.Context, ra
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_LoginRegisWithSSO_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["GoogleToken"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("GoogleToken"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["GoogleToken"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_Login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.InputLogin
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNInputLogin2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputLogin(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_OfferCandidates_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 model.InputCandidates
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg1, err = ec.unmarshalNInputCandidates2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputCandidates(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_Register_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.InputRegister
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOInputRegister2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputRegister(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -2142,6 +2628,21 @@ func (ec *executionContext) field_Mutation_UpdateProfile_args(ctx context.Contex
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_VisitByLink_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["ProfileLink"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ProfileLink"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["ProfileLink"] = arg0
 	return args, nil
 }
 
@@ -2451,6 +2952,21 @@ func (ec *executionContext) field_Query_Search_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_UserByLink_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["link"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("link"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["link"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_UsersByName_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2484,6 +3000,21 @@ func (ec *executionContext) field_Query_UsersByName_args(ctx context.Context, ra
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_VideoCallStatus_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2496,36 +3027,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.InputLogin
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNInputLogin2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputLogin(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_register_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *model.InputRegister
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOInputRegister2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputRegister(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
 	return args, nil
 }
 
@@ -2701,6 +3202,10 @@ func (ec *executionContext) fieldContext_Activation_User(ctx context.Context, fi
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -2827,6 +3332,10 @@ func (ec *executionContext) fieldContext_Activity_User(ctx context.Context, fiel
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -3015,6 +3524,10 @@ func (ec *executionContext) fieldContext_Comment_Post(ctx context.Context, field
 				return ec.fieldContext_Post_Comments(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Post_Likes(ctx, field)
+			case "AttachmentLink":
+				return ec.fieldContext_Post_AttachmentLink(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Post_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -3097,6 +3610,10 @@ func (ec *executionContext) fieldContext_Comment_Sender(ctx context.Context, fie
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -3155,6 +3672,8 @@ func (ec *executionContext) fieldContext_Comment_Replies(ctx context.Context, fi
 				return ec.fieldContext_Comment_Replies(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Comment_Likes(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Comment_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
@@ -3237,8 +3756,56 @@ func (ec *executionContext) fieldContext_Comment_Likes(ctx context.Context, fiel
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Comment_CreatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Comment_CreatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Comment().CreatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Comment_CreatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Comment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3363,6 +3930,10 @@ func (ec *executionContext) fieldContext_ConnectRequest_User1(ctx context.Contex
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -3445,6 +4016,10 @@ func (ec *executionContext) fieldContext_ConnectRequest_User2(ctx context.Contex
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -3571,6 +4146,10 @@ func (ec *executionContext) fieldContext_Connection_User1(ctx context.Context, f
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -3653,6 +4232,10 @@ func (ec *executionContext) fieldContext_Connection_User2(ctx context.Context, f
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -4188,6 +4771,180 @@ func (ec *executionContext) fieldContext_Experience_IsActive(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Job_ID(ctx context.Context, field graphql.CollectedField, obj *model.Job) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Job_ID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Job_ID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Job",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Job_User(ctx context.Context, field graphql.CollectedField, obj *model.Job) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Job_User(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Job().User(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Job_User(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Job",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_User_ID(ctx, field)
+			case "Email":
+				return ec.fieldContext_User_Email(ctx, field)
+			case "Password":
+				return ec.fieldContext_User_Password(ctx, field)
+			case "FirstName":
+				return ec.fieldContext_User_FirstName(ctx, field)
+			case "LastName":
+				return ec.fieldContext_User_LastName(ctx, field)
+			case "MidName":
+				return ec.fieldContext_User_MidName(ctx, field)
+			case "IsActive":
+				return ec.fieldContext_User_IsActive(ctx, field)
+			case "ProfilePhoto":
+				return ec.fieldContext_User_ProfilePhoto(ctx, field)
+			case "BackgroundPhoto":
+				return ec.fieldContext_User_BackgroundPhoto(ctx, field)
+			case "Headline":
+				return ec.fieldContext_User_Headline(ctx, field)
+			case "Pronoun":
+				return ec.fieldContext_User_Pronoun(ctx, field)
+			case "ProfileLink":
+				return ec.fieldContext_User_ProfileLink(ctx, field)
+			case "About":
+				return ec.fieldContext_User_About(ctx, field)
+			case "Location":
+				return ec.fieldContext_User_Location(ctx, field)
+			case "Visits":
+				return ec.fieldContext_User_Visits(ctx, field)
+			case "Follows":
+				return ec.fieldContext_User_Follows(ctx, field)
+			case "Experiences":
+				return ec.fieldContext_User_Experiences(ctx, field)
+			case "Educations":
+				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Job_Text(ctx context.Context, field graphql.CollectedField, obj *model.Job) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Job_Text(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Text, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Job_Text(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Job",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Message_ID(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Message_ID(ctx, field)
 	if err != nil {
@@ -4351,6 +5108,10 @@ func (ec *executionContext) fieldContext_Message_User1(ctx context.Context, fiel
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -4433,6 +5194,10 @@ func (ec *executionContext) fieldContext_Message_User2(ctx context.Context, fiel
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -4533,6 +5298,10 @@ func (ec *executionContext) fieldContext_Mutation_CreatePost(ctx context.Context
 				return ec.fieldContext_Post_Comments(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Post_Likes(ctx, field)
+			case "AttachmentLink":
+				return ec.fieldContext_Post_AttachmentLink(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Post_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -4600,6 +5369,10 @@ func (ec *executionContext) fieldContext_Mutation_UpdatePost(ctx context.Context
 				return ec.fieldContext_Post_Comments(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Post_Likes(ctx, field)
+			case "AttachmentLink":
+				return ec.fieldContext_Post_AttachmentLink(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Post_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -4667,6 +5440,10 @@ func (ec *executionContext) fieldContext_Mutation_DeletePost(ctx context.Context
 				return ec.fieldContext_Post_Comments(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Post_Likes(ctx, field)
+			case "AttachmentLink":
+				return ec.fieldContext_Post_AttachmentLink(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Post_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -5060,6 +5837,226 @@ func (ec *executionContext) fieldContext_Mutation_CommentPost(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_LoginRegisWithSSO(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_LoginRegisWithSSO(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LoginRegisWithSso(rctx, fc.Args["GoogleToken"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_LoginRegisWithSSO(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_LoginRegisWithSSO_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_Login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_Login(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Login(rctx, fc.Args["input"].(model.InputLogin))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_Login(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_Login_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_Register(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_Register(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Register(rctx, fc.Args["input"].(*model.InputRegister))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_Register(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_Register_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_FirstUpdateProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_FirstUpdateProfile(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().FirstUpdateProfile(rctx, fc.Args["input"].(model.InputFirstUpdateProfile))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MutationStatus)
+	fc.Result = res
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_FirstUpdateProfile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MutationStatus does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_FirstUpdateProfile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_UpdateProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_UpdateProfile(ctx, field)
 	if err != nil {
@@ -5086,9 +6083,9 @@ func (ec *executionContext) _Mutation_UpdateProfile(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNUser2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_UpdateProfile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5098,45 +6095,7 @@ func (ec *executionContext) fieldContext_Mutation_UpdateProfile(ctx context.Cont
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "ID":
-				return ec.fieldContext_User_ID(ctx, field)
-			case "Email":
-				return ec.fieldContext_User_Email(ctx, field)
-			case "Password":
-				return ec.fieldContext_User_Password(ctx, field)
-			case "FirstName":
-				return ec.fieldContext_User_FirstName(ctx, field)
-			case "LastName":
-				return ec.fieldContext_User_LastName(ctx, field)
-			case "MidName":
-				return ec.fieldContext_User_MidName(ctx, field)
-			case "IsActive":
-				return ec.fieldContext_User_IsActive(ctx, field)
-			case "ProfilePhoto":
-				return ec.fieldContext_User_ProfilePhoto(ctx, field)
-			case "BackgroundPhoto":
-				return ec.fieldContext_User_BackgroundPhoto(ctx, field)
-			case "Headline":
-				return ec.fieldContext_User_Headline(ctx, field)
-			case "Pronoun":
-				return ec.fieldContext_User_Pronoun(ctx, field)
-			case "ProfileLink":
-				return ec.fieldContext_User_ProfileLink(ctx, field)
-			case "About":
-				return ec.fieldContext_User_About(ctx, field)
-			case "Location":
-				return ec.fieldContext_User_Location(ctx, field)
-			case "Visits":
-				return ec.fieldContext_User_Visits(ctx, field)
-			case "Follows":
-				return ec.fieldContext_User_Follows(ctx, field)
-			case "Experiences":
-				return ec.fieldContext_User_Experiences(ctx, field)
-			case "Educations":
-				return ec.fieldContext_User_Educations(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5179,9 +6138,9 @@ func (ec *executionContext) _Mutation_ForgetPassword(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_ForgetPassword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5191,7 +6150,7 @@ func (ec *executionContext) fieldContext_Mutation_ForgetPassword(ctx context.Con
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5234,9 +6193,9 @@ func (ec *executionContext) _Mutation_ResetPassword(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_ResetPassword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5246,7 +6205,7 @@ func (ec *executionContext) fieldContext_Mutation_ResetPassword(ctx context.Cont
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5257,6 +6216,61 @@ func (ec *executionContext) fieldContext_Mutation_ResetPassword(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_ResetPassword_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_FirstFillData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_FirstFillData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().FirstFillData(rctx, fc.Args["input"].(model.InputUser))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MutationStatus)
+	fc.Result = res
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_FirstFillData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MutationStatus does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_FirstFillData_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -5289,9 +6303,9 @@ func (ec *executionContext) _Mutation_SendActivation(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_SendActivation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5301,7 +6315,7 @@ func (ec *executionContext) fieldContext_Mutation_SendActivation(ctx context.Con
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5344,9 +6358,9 @@ func (ec *executionContext) _Mutation_Activate(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_Activate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5356,7 +6370,7 @@ func (ec *executionContext) fieldContext_Mutation_Activate(ctx context.Context, 
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5399,9 +6413,9 @@ func (ec *executionContext) _Mutation_Follow(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_Follow(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5411,7 +6425,7 @@ func (ec *executionContext) fieldContext_Mutation_Follow(ctx context.Context, fi
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5454,9 +6468,9 @@ func (ec *executionContext) _Mutation_UnFollow(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_UnFollow(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5466,7 +6480,7 @@ func (ec *executionContext) fieldContext_Mutation_UnFollow(ctx context.Context, 
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5509,9 +6523,9 @@ func (ec *executionContext) _Mutation_SendConnectRequest(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_SendConnectRequest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5521,7 +6535,7 @@ func (ec *executionContext) fieldContext_Mutation_SendConnectRequest(ctx context
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5564,9 +6578,9 @@ func (ec *executionContext) _Mutation_DeleteConnectRequest(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_DeleteConnectRequest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5576,7 +6590,7 @@ func (ec *executionContext) fieldContext_Mutation_DeleteConnectRequest(ctx conte
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5619,9 +6633,9 @@ func (ec *executionContext) _Mutation_AcceptConnectRequest(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_AcceptConnectRequest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5631,7 +6645,7 @@ func (ec *executionContext) fieldContext_Mutation_AcceptConnectRequest(ctx conte
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5674,9 +6688,9 @@ func (ec *executionContext) _Mutation_UnConnect(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_UnConnect(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5686,7 +6700,7 @@ func (ec *executionContext) fieldContext_Mutation_UnConnect(ctx context.Context,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5729,9 +6743,9 @@ func (ec *executionContext) _Mutation_SendMessage(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_SendMessage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5741,7 +6755,7 @@ func (ec *executionContext) fieldContext_Mutation_SendMessage(ctx context.Contex
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5789,10 +6803,10 @@ func (ec *executionContext) _Mutation_Visit(ctx context.Context, field graphql.C
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(interface{}); ok {
+		if data, ok := tmp.(model.MutationStatus); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be interface{}`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be MZ221-TPA-Web-Back/graph/model.MutationStatus`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5804,9 +6818,9 @@ func (ec *executionContext) _Mutation_Visit(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_Visit(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5816,7 +6830,7 @@ func (ec *executionContext) fieldContext_Mutation_Visit(ctx context.Context, fie
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5827,6 +6841,81 @@ func (ec *executionContext) fieldContext_Mutation_Visit(ctx context.Context, fie
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_Visit_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_VisitByLink(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_VisitByLink(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().VisitByLink(rctx, fc.Args["ProfileLink"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(model.MutationStatus); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be MZ221-TPA-Web-Back/graph/model.MutationStatus`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MutationStatus)
+	fc.Result = res
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_VisitByLink(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MutationStatus does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_VisitByLink_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -5864,10 +6953,10 @@ func (ec *executionContext) _Mutation_AddEducation(ctx context.Context, field gr
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.Education); ok {
+		if data, ok := tmp.(model.MutationStatus); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *MZ221-TPA-Web-Back/graph/model.Education`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be MZ221-TPA-Web-Back/graph/model.MutationStatus`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5879,9 +6968,9 @@ func (ec *executionContext) _Mutation_AddEducation(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Education)
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNEducation2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐEducation(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_AddEducation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5891,19 +6980,7 @@ func (ec *executionContext) fieldContext_Mutation_AddEducation(ctx context.Conte
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "ID":
-				return ec.fieldContext_Education_ID(ctx, field)
-			case "School":
-				return ec.fieldContext_Education_School(ctx, field)
-			case "Field":
-				return ec.fieldContext_Education_Field(ctx, field)
-			case "StartedAt":
-				return ec.fieldContext_Education_StartedAt(ctx, field)
-			case "EndedAt":
-				return ec.fieldContext_Education_EndedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Education", field.Name)
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -5951,10 +7028,10 @@ func (ec *executionContext) _Mutation_UpdateEducation(ctx context.Context, field
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.Education); ok {
+		if data, ok := tmp.(model.MutationStatus); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *MZ221-TPA-Web-Back/graph/model.Education`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be MZ221-TPA-Web-Back/graph/model.MutationStatus`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5966,9 +7043,9 @@ func (ec *executionContext) _Mutation_UpdateEducation(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Education)
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNEducation2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐEducation(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_UpdateEducation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5978,19 +7055,7 @@ func (ec *executionContext) fieldContext_Mutation_UpdateEducation(ctx context.Co
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "ID":
-				return ec.fieldContext_Education_ID(ctx, field)
-			case "School":
-				return ec.fieldContext_Education_School(ctx, field)
-			case "Field":
-				return ec.fieldContext_Education_Field(ctx, field)
-			case "StartedAt":
-				return ec.fieldContext_Education_StartedAt(ctx, field)
-			case "EndedAt":
-				return ec.fieldContext_Education_EndedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Education", field.Name)
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -6038,10 +7103,10 @@ func (ec *executionContext) _Mutation_RemoveEducation(ctx context.Context, field
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(interface{}); ok {
+		if data, ok := tmp.(model.MutationStatus); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be interface{}`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be MZ221-TPA-Web-Back/graph/model.MutationStatus`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6053,9 +7118,9 @@ func (ec *executionContext) _Mutation_RemoveEducation(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_RemoveEducation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6065,7 +7130,7 @@ func (ec *executionContext) fieldContext_Mutation_RemoveEducation(ctx context.Co
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -6113,10 +7178,10 @@ func (ec *executionContext) _Mutation_AddExperience(ctx context.Context, field g
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.Experience); ok {
+		if data, ok := tmp.(model.MutationStatus); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *MZ221-TPA-Web-Back/graph/model.Experience`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be MZ221-TPA-Web-Back/graph/model.MutationStatus`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6128,9 +7193,9 @@ func (ec *executionContext) _Mutation_AddExperience(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Experience)
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNExperience2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐExperience(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_AddExperience(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6140,23 +7205,7 @@ func (ec *executionContext) fieldContext_Mutation_AddExperience(ctx context.Cont
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "ID":
-				return ec.fieldContext_Experience_ID(ctx, field)
-			case "Position":
-				return ec.fieldContext_Experience_Position(ctx, field)
-			case "Desc":
-				return ec.fieldContext_Experience_Desc(ctx, field)
-			case "Company":
-				return ec.fieldContext_Experience_Company(ctx, field)
-			case "StartedAt":
-				return ec.fieldContext_Experience_StartedAt(ctx, field)
-			case "EndedAt":
-				return ec.fieldContext_Experience_EndedAt(ctx, field)
-			case "IsActive":
-				return ec.fieldContext_Experience_IsActive(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Experience", field.Name)
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -6204,10 +7253,10 @@ func (ec *executionContext) _Mutation_UpdateExperience(ctx context.Context, fiel
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.Experience); ok {
+		if data, ok := tmp.(model.MutationStatus); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *MZ221-TPA-Web-Back/graph/model.Experience`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be MZ221-TPA-Web-Back/graph/model.MutationStatus`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6219,9 +7268,9 @@ func (ec *executionContext) _Mutation_UpdateExperience(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Experience)
+	res := resTmp.(model.MutationStatus)
 	fc.Result = res
-	return ec.marshalNExperience2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐExperience(ctx, field.Selections, res)
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_UpdateExperience(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6231,23 +7280,7 @@ func (ec *executionContext) fieldContext_Mutation_UpdateExperience(ctx context.C
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "ID":
-				return ec.fieldContext_Experience_ID(ctx, field)
-			case "Position":
-				return ec.fieldContext_Experience_Position(ctx, field)
-			case "Desc":
-				return ec.fieldContext_Experience_Desc(ctx, field)
-			case "Company":
-				return ec.fieldContext_Experience_Company(ctx, field)
-			case "StartedAt":
-				return ec.fieldContext_Experience_StartedAt(ctx, field)
-			case "EndedAt":
-				return ec.fieldContext_Experience_EndedAt(ctx, field)
-			case "IsActive":
-				return ec.fieldContext_Experience_IsActive(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Experience", field.Name)
+			return nil, errors.New("field of type MutationStatus does not have child fields")
 		},
 	}
 	defer func() {
@@ -6295,10 +7328,140 @@ func (ec *executionContext) _Mutation_RemoveExperience(ctx context.Context, fiel
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(interface{}); ok {
+		if data, ok := tmp.(model.MutationStatus); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be interface{}`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be MZ221-TPA-Web-Back/graph/model.MutationStatus`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MutationStatus)
+	fc.Result = res
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_RemoveExperience(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MutationStatus does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_RemoveExperience_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_AddJob(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_AddJob(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().AddJob(rctx, fc.Args["Text"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(model.MutationStatus); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be MZ221-TPA-Web-Back/graph/model.MutationStatus`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MutationStatus)
+	fc.Result = res
+	return ec.marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_AddJob(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MutationStatus does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_AddJob_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_OfferCandidates(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_OfferCandidates(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().OfferCandidates(rctx, fc.Args["id"].(string), fc.Args["input"].(model.InputCandidates))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6315,7 +7478,7 @@ func (ec *executionContext) _Mutation_RemoveExperience(ctx context.Context, fiel
 	return ec.marshalNAny2interface(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_RemoveExperience(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_OfferCandidates(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -6332,7 +7495,117 @@ func (ec *executionContext) fieldContext_Mutation_RemoveExperience(ctx context.C
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_RemoveExperience_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_OfferCandidates_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_AnswerCandidates(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_AnswerCandidates(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AnswerCandidates(rctx, fc.Args["id"].(string), fc.Args["input"].(model.InputCandidates))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(interface{})
+	fc.Result = res
+	return ec.marshalNAny2interface(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_AnswerCandidates(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_AnswerCandidates_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_HangUp(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_HangUp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().HangUp(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(interface{})
+	fc.Result = res
+	return ec.marshalNAny2interface(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_HangUp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_HangUp_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -6502,6 +7775,10 @@ func (ec *executionContext) fieldContext_Post_Sender(ctx context.Context, field 
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -6560,6 +7837,8 @@ func (ec *executionContext) fieldContext_Post_Comments(ctx context.Context, fiel
 				return ec.fieldContext_Comment_Replies(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Comment_Likes(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Comment_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
@@ -6642,8 +7921,97 @@ func (ec *executionContext) fieldContext_Post_Likes(ctx context.Context, field g
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Post_AttachmentLink(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Post_AttachmentLink(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AttachmentLink, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Post_AttachmentLink(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Post",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Post_CreatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Post_CreatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Post().CreatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Post_CreatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Post",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6724,6 +8092,10 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -6817,6 +8189,10 @@ func (ec *executionContext) fieldContext_Query_UsersByName(ctx context.Context, 
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -6835,8 +8211,8 @@ func (ec *executionContext) fieldContext_Query_UsersByName(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_login(ctx, field)
+func (ec *executionContext) _Query_UserByLink(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_UserByLink(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6849,7 +8225,7 @@ func (ec *executionContext) _Query_login(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Login(rctx, fc.Args["input"].(model.InputLogin))
+		return ec.resolvers.Query().UserByLink(rctx, fc.Args["link"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6861,19 +8237,61 @@ func (ec *executionContext) _Query_login(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_login(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_UserByLink(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_User_ID(ctx, field)
+			case "Email":
+				return ec.fieldContext_User_Email(ctx, field)
+			case "Password":
+				return ec.fieldContext_User_Password(ctx, field)
+			case "FirstName":
+				return ec.fieldContext_User_FirstName(ctx, field)
+			case "LastName":
+				return ec.fieldContext_User_LastName(ctx, field)
+			case "MidName":
+				return ec.fieldContext_User_MidName(ctx, field)
+			case "IsActive":
+				return ec.fieldContext_User_IsActive(ctx, field)
+			case "ProfilePhoto":
+				return ec.fieldContext_User_ProfilePhoto(ctx, field)
+			case "BackgroundPhoto":
+				return ec.fieldContext_User_BackgroundPhoto(ctx, field)
+			case "Headline":
+				return ec.fieldContext_User_Headline(ctx, field)
+			case "Pronoun":
+				return ec.fieldContext_User_Pronoun(ctx, field)
+			case "ProfileLink":
+				return ec.fieldContext_User_ProfileLink(ctx, field)
+			case "About":
+				return ec.fieldContext_User_About(ctx, field)
+			case "Location":
+				return ec.fieldContext_User_Location(ctx, field)
+			case "Visits":
+				return ec.fieldContext_User_Visits(ctx, field)
+			case "Follows":
+				return ec.fieldContext_User_Follows(ctx, field)
+			case "Experiences":
+				return ec.fieldContext_User_Experiences(ctx, field)
+			case "Educations":
+				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
 	}
 	defer func() {
@@ -6883,62 +8301,7 @@ func (ec *executionContext) fieldContext_Query_login(ctx context.Context, field 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_login_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_register(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_register(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Register(rctx, fc.Args["input"].(*model.InputRegister))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(interface{})
-	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_register(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_register_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_UserByLink_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -7081,6 +8444,10 @@ func (ec *executionContext) fieldContext_Query_CheckReset(ctx context.Context, f
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -7284,6 +8651,10 @@ func (ec *executionContext) fieldContext_Query_ConnectionRequest(ctx context.Con
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -7386,6 +8757,10 @@ func (ec *executionContext) fieldContext_Query_ConnectedUsers(ctx context.Contex
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -7545,8 +8920,28 @@ func (ec *executionContext) _Query_UsersSuggestion(ctx context.Context, field gr
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().UsersSuggestion(rctx)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().UsersSuggestion(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.User); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*MZ221-TPA-Web-Back/graph/model.User`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7607,8 +9002,84 @@ func (ec *executionContext) fieldContext_Query_UsersSuggestion(ctx context.Conte
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_Jobs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_Jobs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Jobs(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.Job); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*MZ221-TPA-Web-Back/graph/model.Job`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Job)
+	fc.Result = res
+	return ec.marshalNJob2ᚕᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐJobᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_Jobs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_Job_ID(ctx, field)
+			case "User":
+				return ec.fieldContext_Job_User(ctx, field)
+			case "Text":
+				return ec.fieldContext_Job_Text(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Job", field.Name)
 		},
 	}
 	return fc, nil
@@ -7724,6 +9195,10 @@ func (ec *executionContext) fieldContext_Query_Post(ctx context.Context, field g
 				return ec.fieldContext_Post_Comments(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Post_Likes(ctx, field)
+			case "AttachmentLink":
+				return ec.fieldContext_Post_AttachmentLink(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Post_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -7811,6 +9286,10 @@ func (ec *executionContext) fieldContext_Query_Posts(ctx context.Context, field 
 				return ec.fieldContext_Post_Comments(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Post_Likes(ctx, field)
+			case "AttachmentLink":
+				return ec.fieldContext_Post_AttachmentLink(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Post_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -7898,6 +9377,10 @@ func (ec *executionContext) fieldContext_Query_PostsByUserId(ctx context.Context
 				return ec.fieldContext_Post_Comments(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Post_Likes(ctx, field)
+			case "AttachmentLink":
+				return ec.fieldContext_Post_AttachmentLink(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Post_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -7965,6 +9448,10 @@ func (ec *executionContext) fieldContext_Query_PostsByKeyword(ctx context.Contex
 				return ec.fieldContext_Post_Comments(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Post_Likes(ctx, field)
+			case "AttachmentLink":
+				return ec.fieldContext_Post_AttachmentLink(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Post_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -8034,6 +9521,8 @@ func (ec *executionContext) fieldContext_Query_Comment(ctx context.Context, fiel
 				return ec.fieldContext_Comment_Replies(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Comment_Likes(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Comment_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
@@ -8103,6 +9592,8 @@ func (ec *executionContext) fieldContext_Query_Comments(ctx context.Context, fie
 				return ec.fieldContext_Comment_Replies(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Comment_Likes(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Comment_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
@@ -8225,6 +9716,61 @@ func (ec *executionContext) fieldContext_Query_IsLikeComment(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_IsLikeComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_VideoCallStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_VideoCallStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().VideoCallStatus(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.VideoCallStatus)
+	fc.Result = res
+	return ec.marshalNVideoCallStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐVideoCallStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_VideoCallStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type VideoCallStatus does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_VideoCallStatus_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -8479,6 +10025,10 @@ func (ec *executionContext) fieldContext_Reset_User(ctx context.Context, field g
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -8561,6 +10111,10 @@ func (ec *executionContext) fieldContext_Search_Users(ctx context.Context, field
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -8617,6 +10171,10 @@ func (ec *executionContext) fieldContext_Search_Posts(ctx context.Context, field
 				return ec.fieldContext_Post_Comments(ctx, field)
 			case "Likes":
 				return ec.fieldContext_Post_Likes(ctx, field)
+			case "AttachmentLink":
+				return ec.fieldContext_Post_AttachmentLink(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Post_CreatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -9315,6 +10873,10 @@ func (ec *executionContext) fieldContext_User_Visits(ctx context.Context, field 
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -9397,6 +10959,10 @@ func (ec *executionContext) fieldContext_User_Follows(ctx context.Context, field
 				return ec.fieldContext_User_Experiences(ctx, field)
 			case "Educations":
 				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -9515,6 +11081,398 @@ func (ec *executionContext) fieldContext_User_Educations(ctx context.Context, fi
 				return ec.fieldContext_Education_EndedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Education", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_IsSso(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_IsSso(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsSso, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_IsSso(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_HasFilledData(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_HasFilledData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasFilledData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_HasFilledData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VideoCall_ID(ctx context.Context, field graphql.CollectedField, obj *model.VideoCall) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VideoCall_ID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VideoCall_ID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VideoCall",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VideoCall_User1(ctx context.Context, field graphql.CollectedField, obj *model.VideoCall) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VideoCall_User1(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User1, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VideoCall_User1(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VideoCall",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_User_ID(ctx, field)
+			case "Email":
+				return ec.fieldContext_User_Email(ctx, field)
+			case "Password":
+				return ec.fieldContext_User_Password(ctx, field)
+			case "FirstName":
+				return ec.fieldContext_User_FirstName(ctx, field)
+			case "LastName":
+				return ec.fieldContext_User_LastName(ctx, field)
+			case "MidName":
+				return ec.fieldContext_User_MidName(ctx, field)
+			case "IsActive":
+				return ec.fieldContext_User_IsActive(ctx, field)
+			case "ProfilePhoto":
+				return ec.fieldContext_User_ProfilePhoto(ctx, field)
+			case "BackgroundPhoto":
+				return ec.fieldContext_User_BackgroundPhoto(ctx, field)
+			case "Headline":
+				return ec.fieldContext_User_Headline(ctx, field)
+			case "Pronoun":
+				return ec.fieldContext_User_Pronoun(ctx, field)
+			case "ProfileLink":
+				return ec.fieldContext_User_ProfileLink(ctx, field)
+			case "About":
+				return ec.fieldContext_User_About(ctx, field)
+			case "Location":
+				return ec.fieldContext_User_Location(ctx, field)
+			case "Visits":
+				return ec.fieldContext_User_Visits(ctx, field)
+			case "Follows":
+				return ec.fieldContext_User_Follows(ctx, field)
+			case "Experiences":
+				return ec.fieldContext_User_Experiences(ctx, field)
+			case "Educations":
+				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VideoCall_User2(ctx context.Context, field graphql.CollectedField, obj *model.VideoCall) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VideoCall_User2(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User2, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VideoCall_User2(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VideoCall",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_User_ID(ctx, field)
+			case "Email":
+				return ec.fieldContext_User_Email(ctx, field)
+			case "Password":
+				return ec.fieldContext_User_Password(ctx, field)
+			case "FirstName":
+				return ec.fieldContext_User_FirstName(ctx, field)
+			case "LastName":
+				return ec.fieldContext_User_LastName(ctx, field)
+			case "MidName":
+				return ec.fieldContext_User_MidName(ctx, field)
+			case "IsActive":
+				return ec.fieldContext_User_IsActive(ctx, field)
+			case "ProfilePhoto":
+				return ec.fieldContext_User_ProfilePhoto(ctx, field)
+			case "BackgroundPhoto":
+				return ec.fieldContext_User_BackgroundPhoto(ctx, field)
+			case "Headline":
+				return ec.fieldContext_User_Headline(ctx, field)
+			case "Pronoun":
+				return ec.fieldContext_User_Pronoun(ctx, field)
+			case "ProfileLink":
+				return ec.fieldContext_User_ProfileLink(ctx, field)
+			case "About":
+				return ec.fieldContext_User_About(ctx, field)
+			case "Location":
+				return ec.fieldContext_User_Location(ctx, field)
+			case "Visits":
+				return ec.fieldContext_User_Visits(ctx, field)
+			case "Follows":
+				return ec.fieldContext_User_Follows(ctx, field)
+			case "Experiences":
+				return ec.fieldContext_User_Experiences(ctx, field)
+			case "Educations":
+				return ec.fieldContext_User_Educations(ctx, field)
+			case "IsSso":
+				return ec.fieldContext_User_IsSso(ctx, field)
+			case "HasFilledData":
+				return ec.fieldContext_User_HasFilledData(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VideoCall_OfferCandidates(ctx context.Context, field graphql.CollectedField, obj *model.VideoCall) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VideoCall_OfferCandidates(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OfferCandidates, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VideoCall_OfferCandidates(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VideoCall",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VideoCall_AnswerCandidates(ctx context.Context, field graphql.CollectedField, obj *model.VideoCall) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VideoCall_AnswerCandidates(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AnswerCandidates, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VideoCall_AnswerCandidates(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VideoCall",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -11293,6 +13251,34 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputInputCandidates(ctx context.Context, obj interface{}) (model.InputCandidates, error) {
+	var it model.InputCandidates
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"userId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "userId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			it.UserID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputInputComment(ctx context.Context, obj interface{}) (model.InputComment, error) {
 	var it model.InputComment
 	asMap := map[string]interface{}{}
@@ -11457,6 +13443,66 @@ func (ec *executionContext) unmarshalInputInputExperience(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputInputFirstUpdateProfile(ctx context.Context, obj interface{}) (model.InputFirstUpdateProfile, error) {
+	var it model.InputFirstUpdateProfile
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"FirstName", "LastName", "MidName", "ProfilePhoto", "Pronoun"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "FirstName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("FirstName"))
+			it.FirstName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "LastName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("LastName"))
+			it.LastName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "MidName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("MidName"))
+			it.MidName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ProfilePhoto":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ProfilePhoto"))
+			it.ProfilePhoto, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "Pronoun":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Pronoun"))
+			it.Pronoun, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputInputLogin(ctx context.Context, obj interface{}) (model.InputLogin, error) {
 	var it model.InputLogin
 	asMap := map[string]interface{}{}
@@ -11544,18 +13590,26 @@ func (ec *executionContext) unmarshalInputInputPost(ctx context.Context, obj int
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"text"}
+	fieldsInOrder := [...]string{"Text", "AttachmentLink"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "text":
+		case "Text":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("text"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Text"))
 			it.Text, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "AttachmentLink":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AttachmentLink"))
+			it.AttachmentLink, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -11572,7 +13626,7 @@ func (ec *executionContext) unmarshalInputInputRegister(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"Email", "Password", "FirstName", "LastName", "MidName"}
+	fieldsInOrder := [...]string{"Email", "Password"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -11595,30 +13649,6 @@ func (ec *executionContext) unmarshalInputInputRegister(ctx context.Context, obj
 			if err != nil {
 				return it, err
 			}
-		case "FirstName":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("FirstName"))
-			it.FirstName, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "LastName":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("LastName"))
-			it.LastName, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "MidName":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("MidName"))
-			it.MidName, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -11632,7 +13662,7 @@ func (ec *executionContext) unmarshalInputInputUser(ctx context.Context, obj int
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"FirstName", "LastName", "MidName", "ProfilePhoto", "BackgroundPhoto", "Headline", "Pronoun", "About", "Location"}
+	fieldsInOrder := [...]string{"FirstName", "LastName", "MidName", "ProfilePhoto", "BackgroundPhoto", "Headline", "Pronoun", "About", "Location", "ProfileLink"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -11708,6 +13738,14 @@ func (ec *executionContext) unmarshalInputInputUser(ctx context.Context, obj int
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Location"))
 			it.Location, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ProfileLink":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ProfileLink"))
+			it.ProfileLink, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -11922,6 +13960,26 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Comment_Likes(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "CreatedAt":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Comment_CreatedAt(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -12205,6 +14263,61 @@ func (ec *executionContext) _Experience(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var jobImplementors = []string{"Job"}
+
+func (ec *executionContext) _Job(ctx context.Context, sel ast.SelectionSet, obj *model.Job) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, jobImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Job")
+		case "ID":
+
+			out.Values[i] = ec._Job_ID(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "User":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Job_User(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "Text":
+
+			out.Values[i] = ec._Job_Text(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var messageImplementors = []string{"Message"}
 
 func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, obj *model.Message) graphql.Marshaler {
@@ -12391,6 +14504,42 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "LoginRegisWithSSO":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_LoginRegisWithSSO(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "Login":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_Login(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "Register":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_Register(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "FirstUpdateProfile":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_FirstUpdateProfile(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "UpdateProfile":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -12413,6 +14562,15 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_ResetPassword(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "FirstFillData":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_FirstFillData(ctx, field)
 			})
 
 			if out.Values[i] == graphql.Null {
@@ -12508,6 +14666,15 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "VisitByLink":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_VisitByLink(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "AddEducation":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -12557,6 +14724,42 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_RemoveExperience(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "AddJob":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_AddJob(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "OfferCandidates":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_OfferCandidates(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "AnswerCandidates":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_AnswerCandidates(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "HangUp":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_HangUp(ctx, field)
 			})
 
 			if out.Values[i] == graphql.Null {
@@ -12657,6 +14860,30 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 				return innerFunc(ctx)
 
 			})
+		case "AttachmentLink":
+
+			out.Values[i] = ec._Post_AttachmentLink(ctx, field, obj)
+
+		case "CreatedAt":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Post_CreatedAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12733,7 +14960,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "login":
+		case "UserByLink":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -12742,30 +14969,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_login(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
-		case "register":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_register(ctx, field)
+				res = ec._Query_UserByLink(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -12986,6 +15190,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "Jobs":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_Jobs(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "Search":
 			field := field
 
@@ -13180,6 +15407,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_IsLikeComment(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "VideoCallStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_VideoCallStatus(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -13513,6 +15763,76 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 				return innerFunc(ctx)
 
 			})
+		case "IsSso":
+
+			out.Values[i] = ec._User_IsSso(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "HasFilledData":
+
+			out.Values[i] = ec._User_HasFilledData(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var videoCallImplementors = []string{"VideoCall"}
+
+func (ec *executionContext) _VideoCall(ctx context.Context, sel ast.SelectionSet, obj *model.VideoCall) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, videoCallImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VideoCall")
+		case "ID":
+
+			out.Values[i] = ec._VideoCall_ID(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "User1":
+
+			out.Values[i] = ec._VideoCall_User1(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "User2":
+
+			out.Values[i] = ec._VideoCall_User2(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "OfferCandidates":
+
+			out.Values[i] = ec._VideoCall_OfferCandidates(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "AnswerCandidates":
+
+			out.Values[i] = ec._VideoCall_AnswerCandidates(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14014,10 +16334,6 @@ func (ec *executionContext) marshalNConnectStatus2MZ221ᚑTPAᚑWebᚑBackᚋgra
 	return v
 }
 
-func (ec *executionContext) marshalNEducation2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐEducation(ctx context.Context, sel ast.SelectionSet, v model.Education) graphql.Marshaler {
-	return ec._Education(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNEducation2ᚕᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐEducationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Education) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -14070,10 +16386,6 @@ func (ec *executionContext) marshalNEducation2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgrap
 		return graphql.Null
 	}
 	return ec._Education(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNExperience2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐExperience(ctx context.Context, sel ast.SelectionSet, v model.Experience) graphql.Marshaler {
-	return ec._Experience(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNExperience2ᚕᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐExperienceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Experience) graphql.Marshaler {
@@ -14145,6 +16457,11 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNInputCandidates2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputCandidates(ctx context.Context, v interface{}) (model.InputCandidates, error) {
+	res, err := ec.unmarshalInputInputCandidates(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNInputEducation2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputEducation(ctx context.Context, v interface{}) (model.InputEducation, error) {
 	res, err := ec.unmarshalInputInputEducation(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -14152,6 +16469,11 @@ func (ec *executionContext) unmarshalNInputEducation2MZ221ᚑTPAᚑWebᚑBackᚋ
 
 func (ec *executionContext) unmarshalNInputExperience2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputExperience(ctx context.Context, v interface{}) (model.InputExperience, error) {
 	res, err := ec.unmarshalInputInputExperience(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNInputFirstUpdateProfile2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐInputFirstUpdateProfile(ctx context.Context, v interface{}) (model.InputFirstUpdateProfile, error) {
+	res, err := ec.unmarshalInputInputFirstUpdateProfile(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -14188,6 +16510,60 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNJob2ᚕᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐJobᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Job) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNJob2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐJob(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNJob2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐJob(ctx context.Context, sel ast.SelectionSet, v *model.Job) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Job(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNMessage2ᚕᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMessageᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Message) graphql.Marshaler {
@@ -14242,6 +16618,16 @@ func (ec *executionContext) marshalNMessage2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraph�
 		return graphql.Null
 	}
 	return ec._Message(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx context.Context, v interface{}) (model.MutationStatus, error) {
+	var res model.MutationStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMutationStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐMutationStatus(ctx context.Context, sel ast.SelectionSet, v model.MutationStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNPost2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
@@ -14331,6 +16717,38 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNUser2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
 }
@@ -14387,6 +16805,16 @@ func (ec *executionContext) marshalNUser2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋm
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNVideoCallStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐVideoCallStatus(ctx context.Context, v interface{}) (model.VideoCallStatus, error) {
+	var res model.VideoCallStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNVideoCallStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐVideoCallStatus(ctx context.Context, sel ast.SelectionSet, v model.VideoCallStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -14698,6 +17126,16 @@ func (ec *executionContext) unmarshalOInputRegister2ᚖMZ221ᚑTPAᚑWebᚑBack�
 	}
 	res, err := ec.unmarshalInputInputRegister(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

@@ -54,3 +54,8 @@ func JwtGetValue(ctx context.Context) *JwtCustomClaim {
 	raw, _ := ctx.Value(string("tokenValue")).(*JwtCustomClaim)
 	return raw
 }
+
+type GoogleJwtType struct {
+	email string
+	jwt.StandardClaims
+}

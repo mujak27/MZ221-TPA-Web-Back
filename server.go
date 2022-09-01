@@ -20,7 +20,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -48,8 +48,11 @@ func main() {
 
 	// refer https://github.com/go-sql-driver/mysql#dsn-data-source-name for details
 	// dsn := os.Getenv("DATABASE_URL")
-	dsn := "root:@tcp(127.0.0.1:3306)/tpaweb?charset=utf8mb4&parseTime=True&loc=Local"
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+
+	// dsn := "root:@tcp(127.0.0.1:3306)/tpaweb?charset=utf8mb4&parseTime=True&loc=Local"
+	// db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	dsn := "host=localhost user=postgres password=pw dbname=tpaweb port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
 		panic(err)
@@ -75,6 +78,7 @@ func main() {
 		&model.PostLike{},
 		&model.Comment{},
 		&model.CommentLike{},
+		&model.Job{},
 	)
 
 	c := generated.Config{Resolvers: &graph.Resolver{

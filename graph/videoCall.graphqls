@@ -1,0 +1,29 @@
+
+type VideoCall {
+  ID : ID!
+  User1 : User!
+  User2 : User!
+  OfferCandidates : [String!]!
+  AnswerCandidates : [String!]!
+}
+
+enum VideoCallStatus {
+  Null
+  WaitingUser1
+  WaitingUser2
+  OnGoing
+}
+
+extend type Query {
+  VideoCallStatus(id : ID!) : VideoCallStatus!
+}
+
+extend type Mutation {
+  OfferCandidates(id : ID!, input : InputCandidates!) : Any!
+  AnswerCandidates(id : ID!, input : InputCandidates!) : Any!
+  HangUp(id : ID!) : Any!
+}
+
+input InputCandidates {
+  userId : ID!
+}

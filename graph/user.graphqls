@@ -9,6 +9,13 @@ enum ConnectStatus {
   NotConnected
 }
 
+enum MutationStatus {
+  Success
+  NotFound
+  AlreadyExist
+  Error
+}
+
 type Experience {
   ID: ID!
   Position: String!
@@ -48,6 +55,15 @@ type User {
   Follows : [User!]! @goField(forceResolver: true)
   Experiences : [Experience!]! @goField(forceResolver: true)
   Educations : [Education!]! @goField(forceResolver: true)
+
+  IsSso : Boolean!
+  HasFilledData : Boolean!
+}
+
+type Job {
+  ID : ID!
+  User : User! @goField(forceResolver: true)
+  Text : String!
 }
 
 type Activity {
@@ -104,9 +120,8 @@ type ConnectRequest {
 type Query {
   user(id: ID!): User!
   UsersByName(name: String, Limit:Int!, Offset:Int!): [User!]!
+  UserByLink(link : String!) : User!
 
-  login(input : InputLogin!) : Any!
-  register(input : InputRegister) : Any!
   Activation(id: ID!): Activation!
   CheckReset(id : ID!) : User!
 
@@ -118,36 +133,47 @@ type Query {
 
   Messages(id1: ID!, id2: ID!) : [Message!]!
 
-  UsersSuggestion : [User!]!
+  UsersSuggestion : [User!]! @auth
+
+  Jobs : [Job!]! @auth
 }
 
 extend type Mutation {
-  UpdateProfile(input : InputUser!) : User!
-  ForgetPassword(email : String!) : Any!
-  ResetPassword(id : ID!, password : String!) : Any!
+  LoginRegisWithSSO(GoogleToken : String!) : String!
+  Login(input : InputLogin!) : String!
+  Register(input : InputRegister) : String!
 
-  SendActivation(id: ID!): Any!
-  Activate(id: ID!): Any!
+  FirstUpdateProfile(input : InputFirstUpdateProfile!) : MutationStatus!
+  UpdateProfile(input : InputUser!) : MutationStatus!
+  ForgetPassword(email : String!) : MutationStatus!
+  ResetPassword(id: ID!, password : String!) : MutationStatus!
+  FirstFillData(input : InputUser!) : MutationStatus!
 
-  Follow(id1: ID!, id2: ID!): Any!
-  UnFollow(id1: ID!, id2: ID!): Any!
+  SendActivation(id: ID!): MutationStatus!
+  Activate(id: ID!): MutationStatus!
 
-  SendConnectRequest(id1: ID!, id2: ID!): Any!
-  DeleteConnectRequest(id1: ID!, id2: ID!): Any!
-  AcceptConnectRequest(id1: ID!, id2: ID!): Any!
-  UnConnect(id1: ID!, id2: ID!): Any!
+  Follow(id1: ID!, id2: ID!): MutationStatus!
+  UnFollow(id1: ID!, id2: ID!): MutationStatus!
 
-  SendMessage(input : InputMessage!): Any!
+  SendConnectRequest(id1: ID!, id2: ID!): MutationStatus!
+  DeleteConnectRequest(id1: ID!, id2: ID!): MutationStatus!
+  AcceptConnectRequest(id1: ID!, id2: ID!): MutationStatus!
+  UnConnect(id1: ID!, id2: ID!): MutationStatus!
 
-  Visit(id: ID!): Any! @auth
+  SendMessage(input : InputMessage!): MutationStatus!
 
-  AddEducation(input : InputEducation!): Education! @auth
-  UpdateEducation(id:ID!, input : InputEducation!): Education! @auth
-  RemoveEducation(id: ID!): Any! @auth
+  Visit(id: ID!): MutationStatus! @auth
+  VisitByLink(ProfileLink: String!): MutationStatus! @auth
 
-  AddExperience(input : InputExperience!): Experience! @auth
-  UpdateExperience(id:ID!, input : InputExperience!): Experience! @auth
-  RemoveExperience(id: ID!): Any! @auth
+  AddEducation(input : InputEducation!): MutationStatus! @auth
+  UpdateEducation(id:ID!, input : InputEducation!): MutationStatus! @auth
+  RemoveEducation(id: ID!): MutationStatus! @auth
+
+  AddExperience(input : InputExperience!): MutationStatus! @auth
+  UpdateExperience(id:ID!, input : InputExperience!): MutationStatus! @auth
+  RemoveExperience(id: ID!): MutationStatus! @auth
+
+  AddJob(Text : String!) : MutationStatus! @auth
 }
 
 input InputMessage {
@@ -181,9 +207,6 @@ input InputLogin {
 input InputRegister {
   Email : String!
   Password : String!
-  FirstName : String!
-  LastName : String!
-  MidName : String!
 }
 
 input InputUser{
@@ -196,4 +219,13 @@ input InputUser{
   Pronoun : String!
   About : String!
   Location : String!
+  ProfileLink : String!
+}
+
+input InputFirstUpdateProfile {
+  FirstName : String!
+  LastName : String!
+  MidName : String!
+  ProfilePhoto : String!
+  Pronoun : String!
 }

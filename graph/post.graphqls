@@ -14,6 +14,8 @@ type Post {
   Sender: User! @goField(forceResolver: true)
   Comments: [Comment!]! @goField(forceResolver: true)
   Likes: [User!]! @goField(forceResolver: true)
+  AttachmentLink : String
+  CreatedAt : String!
 }
 
 type Comment {
@@ -23,6 +25,7 @@ type Comment {
   Sender : User! @goField(forceResolver: true)
   Replies : [Comment!]! @goField(forceResolver: true)
   Likes: [User!]! @goField(forceResolver: true)
+  CreatedAt : String!
 }
 
 
@@ -53,7 +56,8 @@ extend type Mutation {
 }
 
 input InputPost {
-  text: String!
+  Text: String!
+  AttachmentLink: String!
 }
 
 input InputComment {

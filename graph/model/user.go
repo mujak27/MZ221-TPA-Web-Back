@@ -28,6 +28,9 @@ type User struct {
 	Follows         []*User       `json:"Follow" gorm:"many2many:user_follows"`
 	Experiences     []*Experience `json:"Experiences" gorm:"many2many:user_experiences"`
 	Educations      []*Education  `json:"Educations" gorm:"many2many:user_educations"`
+	IsSso           bool          `json:"IsSso"`
+	HasFilledData   bool          `json:"HasFilledData"`
+	CreatedAt       time.Time     `json:"CreatedAt"`
 }
 
 type Activity struct {
@@ -67,8 +70,8 @@ type UserVisit struct {
 
 type UserExperience struct {
 	ID           string `json:"id" gorm:"type:varchar(191)"`
-	UserId       string `gorm:"type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	ExperienceId string `gorm:"type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	UserId       string `gorm:"type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;reference:User"`
+	ExperienceId string `gorm:"type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;reference:Experiences"`
 }
 
 type UserEducation struct {
@@ -86,13 +89,14 @@ type Education struct {
 }
 
 type Experience struct {
-	ID        string `json:"id" gorm:"type:varchar(191)"`
-	Position  string `json:"Position"`
-	Desc      string `json:"Desc"`
-	Company   string `json:"Company"`
-	StartedAt string `json:"StartedAt"`
-	EndedAt   string `json:"EndedAt"`
-	IsActive  bool   `json:"IsActive"`
+	ID        string    `json:"id" gorm:"type:varchar(191)"`
+	Position  string    `json:"Position"`
+	Desc      string    `json:"Desc"`
+	Company   string    `json:"Company"`
+	StartedAt string    `json:"StartedAt"`
+	EndedAt   string    `json:"EndedAt"`
+	IsActive  bool      `json:"IsActive"`
+	CreatedAt time.Time `json:"CreatedAt"`
 }
 
 type Activation struct {
@@ -123,11 +127,8 @@ type InputLogin struct {
 }
 
 type InputRegister struct {
-	Email     string `json:"Email"`
-	Password  string `json:"Password"`
-	FirstName string `json:"FirstName"`
-	LastName  string `json:"LastName"`
-	MidName   string `json:"MidName"`
+	Email    string `json:"Email"`
+	Password string `json:"Password"`
 }
 
 type ConnectStatus string
@@ -197,14 +198,17 @@ type InputMessage struct {
 	User2Id string `json:"User2Id"`
 }
 
-type InputUser struct {
-	FirstName       string `json:"FirstName"`
-	LastName        string `json:"LastName"`
-	MidName         string `json:"MidName"`
-	ProfilePhoto    string `json:"ProfilePhoto"`
-	BackgroundPhoto string `json:"BackgroundPhoto"`
-	Headline        string `json:"Headline"`
-	Pronoun         string `json:"Pronoun"`
-	About           string `json:"About"`
-	Location        string `json:"Location"`
+type Job struct {
+	ID     string `json:"ID"`
+	UserId string `gorm:"type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	User   *User  `json:"User"`
+	Text   string `json:"Text"`
+}
+
+type InputSso struct {
+	Email        string `json:"Email"`
+	IsActive     bool   `json:"IsActive"`
+	ProfilePhoto string `json:"ProfilePhoto"`
+	FirstName    string `json:"FirstName"`
+	LastName     string `json:"LastName"`
 }

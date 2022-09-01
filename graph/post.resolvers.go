@@ -51,6 +51,11 @@ func (r *commentResolver) Likes(ctx context.Context, obj *model.Comment) ([]*mod
 	return UsersById(r.Resolver, userIds)
 }
 
+// CreatedAt is the resolver for the CreatedAt field.
+func (r *commentResolver) CreatedAt(ctx context.Context, obj *model.Comment) (string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 // CreatePost is the resolver for the CreatePost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.InputPost) (*model.Post, error) {
 	userId := auth.JwtGetValue(ctx).Userid
@@ -62,16 +67,17 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.InputPost
 	}
 
 	post := &model.Post{
-		ID:       uuid.NewString(),
-		Text:     input.Text,
-		SenderId: userId,
-		Comments: []*model.Comment{},
+		ID:             uuid.NewString(),
+		Text:           input.Text,
+		SenderId:       userId,
+		Comments:       []*model.Comment{},
+		AttachmentLink: input.AttachmentLink,
 	}
 	r.posts = append(r.posts, post)
 
 	r.DB.Create(post)
 
-	activityText := user.FirstName + " " + user.LastName + "has created a new post " + post.Text
+	activityText := user.FirstName + " " + user.LastName + " has created a new post " + post.Text
 	AddActivity(r.Resolver, userId, activityText)
 
 	return post, nil
@@ -219,6 +225,11 @@ func (r *postResolver) Likes(ctx context.Context, obj *model.Post) ([]*model.Use
 	return UsersById(r.Resolver, userIds)
 }
 
+// CreatedAt is the resolver for the CreatedAt field.
+func (r *postResolver) CreatedAt(ctx context.Context, obj *model.Post) (string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 // Post is the resolver for the Post field.
 func (r *queryResolver) Post(ctx context.Context, id string) (*model.Post, error) {
 	var post *model.Post
@@ -232,50 +243,15 @@ func (r *queryResolver) Post(ctx context.Context, id string) (*model.Post, error
 func (r *queryResolver) Posts(ctx context.Context, limit int, offset int) ([]*model.Post, error) {
 	fmt.Println(limit, offset)
 
-	var idList []string
-	myId := auth.JwtGetValue(ctx).Userid
-	idList = append(idList, myId)
-
-	var follows []*model.UserFollow
-
-	if err := r.DB.Find(&follows, "user_id = ?", myId).Error; err != nil {
+	idList, err := getFriendIds(r.Resolver, ctx)
+	if err != nil {
 		return nil, err
 	}
-
-	followIds := lo.Map[*model.UserFollow, string](follows, func(x *model.UserFollow, _ int) string {
-		return x.FollowId
-	})
-	idList = append(idList, followIds...)
-
-	var connections []*model.Connection
-
-	if err := r.DB.Find(&connections, "user1_id = ?", myId).Error; err != nil {
-		return nil, err
-	}
-	connectionIds := lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
-		return x.User2ID
-	})
-	idList = append(idList, connectionIds...)
-
-	if err := r.DB.Find(&connections, "user2_id = ?", myId).Error; err != nil {
-		return nil, err
-	}
-	connectionIds = lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
-		return x.User1ID
-	})
-	idList = append(idList, connectionIds...)
-
-	idList = lo.Uniq[string](idList)
-
-	fmt.Println("----------------")
-	fmt.Println(idList)
 
 	var posts []*model.Post
 	if err := r.DB.Limit(limit).Offset(offset).Find(&posts, "sender_id IN ?", idList).Error; err != nil {
 		return nil, err
 	}
-	fmt.Println(posts)
-
 	return posts, nil
 }
 
@@ -365,3 +341,13 @@ func (r *Resolver) Post() generated.PostResolver { return &postResolver{r} }
 type commentResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type postResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *postResolver) AttachmentLink(ctx context.Context, obj *model.Post) (*string, error) {
+	panic(fmt.Errorf("not implemented"))
+}

@@ -29,5 +29,11 @@ update profile (except password & email), update profile & background img, forge
 23 aug
 comment, reply comment, comment likes, notification, users suggestion, connection request list
 
+9
+24 aug
+job
+25 Aug
+postgre
+-> add post share
 
 problems

@@ -29,6 +29,7 @@ type Resolver struct {
 	activities       []*model.Activity
 	messages         []*model.Message
 	resets           []*model.Reset
+	jobs             []*model.Job
 	DB               *gorm.DB
 	// follows         []*model.Follow
 }

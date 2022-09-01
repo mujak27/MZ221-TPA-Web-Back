@@ -4,6 +4,7 @@ import (
 	"MZ221-TPA-Web-Back/auth"
 	"MZ221-TPA-Web-Back/graph/model"
 	"context"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/samber/lo"
@@ -17,6 +18,14 @@ func AddActivity(r *Resolver, userId string, text string) error {
 	}
 	r.activities = append(r.activities, activity)
 	return r.DB.Create(activity).Error
+}
+
+func UserByProfileLink(r *Resolver, link string) (*model.User, error) {
+	var user *model.User
+	if err := r.DB.First(&user, "profile_link = ?", link).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func UserById(r *Resolver, id string) (*model.User, error) {
@@ -48,6 +57,33 @@ func SortIdAsc(id1 string, id2 string) (string, string) {
 func getId(ctx context.Context) string {
 	return auth.JwtGetValue(ctx).Userid
 
+}
+
+func getConnectedIds(r *Resolver, ctx context.Context) ([]string, error) {
+
+	var idList []string
+	myId := auth.JwtGetValue(ctx).Userid
+
+	var connections []*model.Connection
+	if err := r.DB.Find(&connections, "user1_id = ?", myId).Error; err != nil {
+		return nil, err
+	}
+	connectionIds := lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
+		return x.User2ID
+	})
+	idList = append(idList, connectionIds...)
+
+	if err := r.DB.Find(&connections, "user2_id = ?", myId).Error; err != nil {
+		return nil, err
+	}
+	connectionIds = lo.Map[*model.Connection, string](connections, func(x *model.Connection, _ int) string {
+		return x.User1ID
+	})
+	idList = append(idList, connectionIds...)
+
+	idList = lo.Uniq[string](idList)
+
+	return idList, nil
 }
 
 func getFriendIds(r *Resolver, ctx context.Context) ([]string, error) {
@@ -86,4 +122,17 @@ func getFriendIds(r *Resolver, ctx context.Context) ([]string, error) {
 	idList = lo.Uniq[string](idList)
 
 	return idList, err
+}
+
+func validateEmail(email string) bool {
+
+	indexAt := strings.Index(email, "@")
+	indexDot := strings.Index(email, ".")
+	length := len(email)
+
+	if length == 0 || indexAt == -1 || indexDot == -1 || indexAt > indexDot || indexAt == indexDot-1 || indexAt == 0 || indexDot == length-1 {
+		return false
+	}
+
+	return true
 }
