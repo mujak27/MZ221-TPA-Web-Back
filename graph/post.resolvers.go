@@ -9,6 +9,7 @@ import (
 	"MZ221-TPA-Web-Back/graph/model"
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/samber/lo"
@@ -111,6 +112,17 @@ func (r *mutationResolver) LikePost(ctx context.Context, id string) (interface{}
 	r.postLikes = append(r.postLikes, postLike)
 	r.DB.Create(postLike)
 
+	var post *model.Post
+	if err := r.DB.First(&post, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+
+	myUser, _ := UserById(r.Resolver, myId)
+
+	activityText := myUser.FirstName + " " + myUser.LastName + " has liked your post"
+
+	AddActivity(r.Resolver, post.SenderId, activityText)
+
 	return map[string]interface{}{
 		"status": "success",
 	}, nil
@@ -150,6 +162,17 @@ func (r *mutationResolver) LikeComment(ctx context.Context, id string) (interfac
 	r.comment_likes = append(r.comment_likes, commentLike)
 	r.DB.Create(commentLike)
 
+	var comment *model.Comment
+	if err := r.DB.First(&comment, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+
+	myUser, _ := UserById(r.Resolver, myId)
+
+	activityText := myUser.FirstName + " " + myUser.LastName + " has liked your comment"
+
+	AddActivity(r.Resolver, comment.SenderId, activityText)
+
 	return map[string]interface{}{
 		"status": "success",
 	}, nil
@@ -174,6 +197,20 @@ func (r *mutationResolver) UnLikeComment(ctx context.Context, id string) (interf
 // CommentPost is the resolver for the CommentPost field.
 func (r *mutationResolver) CommentPost(ctx context.Context, input *model.InputComment) (interface{}, error) {
 	myId := getId(ctx)
+
+	log.Println("comment post")
+	log.Println(myId)
+
+	var post *model.Post
+	if err := r.DB.First(&post, "id = ?", input.PostID).Error; err != nil {
+		return nil, err
+	}
+
+	var sender *model.User
+	if err := r.DB.First(&sender, "id = ?", myId).Error; err != nil {
+		return nil, err
+	}
+
 	comment := &model.Comment{
 		ID:       uuid.NewString(),
 		Text:     input.Text,
@@ -181,14 +218,36 @@ func (r *mutationResolver) CommentPost(ctx context.Context, input *model.InputCo
 		PostId:   input.PostID,
 	}
 	if input.RepliedToID != "" {
+		// if nested comment
 		comment.RepliedToId = &input.RepliedToID
-	} else {
+
+		var repliedComment *model.Comment
+		if err := r.DB.First(&repliedComment, "id = ?", input.RepliedToID).Error; err != nil {
+			return nil, err
+		}
+
+		var repliedSender *model.User
+		if err := r.DB.First(&repliedSender, "id = ?", repliedComment.SenderId).Error; err != nil {
+			return nil, err
+		}
+
+		log.Println(repliedSender.ID)
+		if repliedSender.ID != myId {
+			activity := "user " + concatUserName(repliedSender) + "has commented your reply with '" + input.Text + "'"
+			AddActivity(r.Resolver, repliedComment.SenderId, activity)
+		}
 	}
 	r.comments = append(r.comments, comment)
 	if err := r.DB.Create(comment).Error; err != nil {
 		return map[string]interface{}{
 			"status": "failed",
 		}, err
+	}
+
+	log.Println(post.SenderId)
+	if post.SenderId != myId {
+		activity := "user " + concatUserName(sender) + " has commented your post with '" + input.Text + "'"
+		AddActivity(r.Resolver, post.SenderId, activity)
 	}
 
 	return map[string]interface{}{
@@ -255,7 +314,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit int, offset int) ([]*mo
 	}
 
 	var posts []*model.Post
-	if err := r.DB.Limit(limit).Offset(offset).Find(&posts, "sender_id IN ?", idList).Error; err != nil {
+	if err := r.DB.Order("created_at desc").Limit(limit).Offset(offset).Find(&posts, "sender_id IN ?", idList).Error; err != nil {
 		return nil, err
 	}
 	return posts, nil
@@ -338,14 +397,10 @@ func (r *queryResolver) IsLikeComment(ctx context.Context, id string) (bool, err
 // Comment returns generated.CommentResolver implementation.
 func (r *Resolver) Comment() generated.CommentResolver { return &commentResolver{r} }
 
-// Mutation returns generated.MutationResolver implementation.
-func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
-
 // Post returns generated.PostResolver implementation.
 func (r *Resolver) Post() generated.PostResolver { return &postResolver{r} }
 
 type commentResolver struct{ *Resolver }
-type mutationResolver struct{ *Resolver }
 type postResolver struct{ *Resolver }
 
 // !!! WARNING !!!

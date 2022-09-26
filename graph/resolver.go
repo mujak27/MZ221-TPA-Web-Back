@@ -26,6 +26,7 @@ type Resolver struct {
 	user_visits      []*model.UserVisit
 	user_experiences []*model.UserExperience
 	user_educations  []*model.UserEducation
+	blocks           []*model.Block
 	activities       []*model.Activity
 	messages         []*model.Message
 	resets           []*model.Reset

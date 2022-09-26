@@ -26,6 +26,33 @@ import (
 
 const defaultPort = "8080"
 
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+func reader(conn *websocket.Conn) {
+	for {
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			log.Println(err)
+		}
+
+		if err = conn.WriteMessage(messageType, p); err != nil {
+			log.Println(err)
+		}
+	}
+}
+
+func wsEndpoint(w http.ResponseWriter, r *http.Request) {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
+	ws, _ := upgrader.Upgrade(w, r, nil)
+
+	reader(ws)
+
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -35,8 +62,6 @@ func main() {
 	router := chi.NewRouter()
 	router.Use(auth.AuthMiddleware)
 
-	// Add CORS middleware around every request
-	// See https://github.com/rs/cors for full option listing
 	router.Use(cors.New(cors.Options{
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
 		AllowedOrigins: []string{"https://*", "http://*"},
@@ -46,12 +71,10 @@ func main() {
 		ExposedHeaders: []string{"Link"},
 	}).Handler)
 
-	// refer https://github.com/go-sql-driver/mysql#dsn-data-source-name for details
-	// dsn := os.Getenv("DATABASE_URL")
-
 	// dsn := "root:@tcp(127.0.0.1:3306)/tpaweb?charset=utf8mb4&parseTime=True&loc=Local"
 	// db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	dsn := "host=localhost user=postgres password=mysecretpassword dbname=tpaweb port=5433 sslmode=disable TimeZone=Asia/Shanghai"
+	dsn := "host=localhost user=postgres password=pw dbname=tpaweb port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	// dsn := "host=localhost user=postgres password=mysecretpassword dbname=tpaweb port=5433 sslmode=disable TimeZone=Asia/Shanghai"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
@@ -72,6 +95,7 @@ func main() {
 		&model.UserVisit{},
 		&model.UserEducation{},
 		&model.UserExperience{},
+		&model.Block{},
 		&model.Message{},
 
 		&model.Post{},
@@ -91,17 +115,32 @@ func main() {
 		Upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
 				// Check against your desired domains here
-				return r.Host == "example.org"
+				return true
 			},
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 		},
 	})
 
-	router.Handle("/",
-		// middleware(
-		playground.Handler("GraphQL playground", "/query"))
-	// )
+	ws := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	ws.AddTransport(&transport.Websocket{
+		Upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				log.Println("ws")
+				// Check against your desired domains here
+				return true
+			},
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+		},
+	})
+	// router.Handle("/ws", wsEndpoint)
+
+	// e := router.NewRouter(echo.New(), ws)
+	// e.Logger.Fatal(e.Start(":8080"))
+
+	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	// router.Handle("/ws", wsEndpoint)
 	router.Handle("/query", srv)
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)

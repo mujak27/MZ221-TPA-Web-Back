@@ -20,9 +20,14 @@ func AddActivity(r *Resolver, userId string, text string) error {
 	return r.DB.Create(activity).Error
 }
 
-func UserByProfileLink(r *Resolver, link string) (*model.User, error) {
+func UserByProfileLink(ctx context.Context, r *Resolver, link string) (*model.User, error) {
+	myId := getId(ctx)
 	var user *model.User
 	if err := r.DB.First(&user, "profile_link = ?", link).Error; err != nil {
+		return nil, err
+	}
+	var block *model.Block
+	if err := r.DB.First(&block, "user1_id = ? and user2_id = ?", user.ID, myId).Error; err == nil {
 		return nil, err
 	}
 	return user, nil
@@ -135,4 +140,16 @@ func validateEmail(email string) bool {
 	}
 
 	return true
+}
+
+func concatUserName(user *model.User) string {
+	res := user.FirstName
+	if user.MidName != "" {
+		res += " " + user.MidName
+	}
+	if user.LastName != "" {
+		res += " " + user.LastName
+	}
+
+	return res
 }

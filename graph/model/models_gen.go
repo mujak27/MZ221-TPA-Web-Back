@@ -8,73 +8,46 @@ import (
 	"strconv"
 )
 
-type InputFirstUpdateProfile struct {
-	FirstName    string `json:"FirstName"`
-	LastName     string `json:"LastName"`
-	MidName      string `json:"MidName"`
-	ProfilePhoto string `json:"ProfilePhoto"`
-	Pronoun      string `json:"Pronoun"`
-}
 
-type InputPost struct {
-	Text           string `json:"Text"`
-	AttachmentLink string `json:"AttachmentLink"`
-}
-
-type InputUser struct {
-	FirstName       string `json:"FirstName"`
-	LastName        string `json:"LastName"`
-	MidName         string `json:"MidName"`
-	ProfilePhoto    string `json:"ProfilePhoto"`
-	BackgroundPhoto string `json:"BackgroundPhoto"`
-	Headline        string `json:"Headline"`
-	Pronoun         string `json:"Pronoun"`
-	About           string `json:"About"`
-	Location        string `json:"Location"`
-	ProfileLink     string `json:"ProfileLink"`
-}
-
-type MutationStatus string
+type EnumMessageType string
 
 const (
-	MutationStatusSuccess      MutationStatus = "Success"
-	MutationStatusNotFound     MutationStatus = "NotFound"
-	MutationStatusAlreadyExist MutationStatus = "AlreadyExist"
-	MutationStatusError        MutationStatus = "Error"
+	EnumMessageTypeText      EnumMessageType = "text"
+	EnumMessageTypeVideoCall EnumMessageType = "videoCall"
+	EnumMessageTypePost      EnumMessageType = "post"
 )
 
-var AllMutationStatus = []MutationStatus{
-	MutationStatusSuccess,
-	MutationStatusNotFound,
-	MutationStatusAlreadyExist,
-	MutationStatusError,
+var AllEnumMessageType = []EnumMessageType{
+	EnumMessageTypeText,
+	EnumMessageTypeVideoCall,
+	EnumMessageTypePost,
 }
 
-func (e MutationStatus) IsValid() bool {
+func (e EnumMessageType) IsValid() bool {
 	switch e {
-	case MutationStatusSuccess, MutationStatusNotFound, MutationStatusAlreadyExist, MutationStatusError:
+	case EnumMessageTypeText, EnumMessageTypeVideoCall, EnumMessageTypePost:
 		return true
 	}
 	return false
 }
 
-func (e MutationStatus) String() string {
+func (e EnumMessageType) String() string {
 	return string(e)
 }
 
-func (e *MutationStatus) UnmarshalGQL(v interface{}) error {
+func (e *EnumMessageType) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = MutationStatus(str)
+	*e = EnumMessageType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MutationStatus", str)
+		return fmt.Errorf("%s is not a valid enumMessageType", str)
 	}
 	return nil
 }
 
-func (e MutationStatus) MarshalGQL(w io.Writer) {
+func (e EnumMessageType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

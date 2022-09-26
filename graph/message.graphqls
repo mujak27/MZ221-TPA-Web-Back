@@ -1,0 +1,39 @@
+enum enumMessageType {
+  text
+  videoCall
+  post
+}
+
+# user 1 sends to user 2
+type Message {
+  ID : ID!
+  Text : String!
+  User1 : User! @goField(forceResolver: true)
+  User2 : User! @goField(forceResolver: true)
+  imageLink : String
+  messageType : enumMessageType
+  CreatedAt : String!
+}
+
+extend type Query {
+  Messages(id1: ID!, id2: ID!) : [Message!]!
+  RecentMessage : [Message!]!
+}
+
+
+extend type Mutation {
+  SendMessage(input : InputMessage!): MutationStatus!
+}
+
+
+extend type Subscription {
+  getMessages(id: ID!): [Message!]!
+}
+
+input InputMessage {
+  text : String!
+  imageLink : String
+  messageType : enumMessageType
+  user1Id : String!
+  user2Id : String!
+}

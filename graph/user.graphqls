@@ -2,6 +2,8 @@
 scalar Any
 scalar Upload
 
+
+
 enum ConnectStatus {
   Connected
   SentByUser1
@@ -15,6 +17,8 @@ enum MutationStatus {
   AlreadyExist
   Error
 }
+
+
 
 type Experience {
   ID: ID!
@@ -60,6 +64,12 @@ type User {
   HasFilledData : Boolean!
 }
 
+type Block {
+  ID : ID!
+  User1 : User! @goField(forceResolver: true)
+  User2 : User! @goField(forceResolver: true)
+}
+
 type Job {
   ID : ID!
   User : User! @goField(forceResolver: true)
@@ -70,15 +80,6 @@ type Activity {
   ID : ID!
   User : User! @goField(forceResolver: true)
   Text : String!
-}
-
-# user 1 sends to user 2
-type Message {
-  ID : ID!
-  Text : String!
-  User1 : User! @goField(forceResolver: true)
-  User2 : User! @goField(forceResolver: true)
-  CreatedAt : String!
 }
 
 
@@ -109,14 +110,6 @@ type ConnectRequest {
   User2 : User! @goField(forceResolver: true)
 }
 
-
-# user 1 follow user 2
-# type Follow {
-#   ID : ID!
-#   User1 : User! @goField(forceResolver: true)
-#   User2 : User! @goField(forceResolver: true)
-# }
-
 type Query {
 
   CountUser(Keyword : String): Int! @auth
@@ -125,16 +118,20 @@ type Query {
   UsersByName(name: String, Limit:Int!, Offset:Int!): [User!]!
   UserByLink(link : String!) : User!
 
+
+
+  isEmailValid(email : String!) : Boolean!
   Activation(id: ID!): Activation!
   CheckReset(id : ID!) : User!
 
+  IsBlock(userId : ID!) : Boolean!
   IsFollow(id1:ID!, id2:ID!) : Boolean!
   IsConnect(id1:ID!, id2:ID!) : ConnectStatus!
   ConnectionRequest : [User!]!
   ConnectedUsers : [User!]! @auth
   Activities : [Activity!]! @auth
 
-  Messages(id1: ID!, id2: ID!) : [Message!]!
+  
 
   UsersSuggestion : [User!]! @auth
 
@@ -151,9 +148,13 @@ extend type Mutation {
   ForgetPassword(email : String!) : MutationStatus!
   ResetPassword(id: ID!, password : String!) : MutationStatus!
   FirstFillData(input : InputUser!) : MutationStatus!
+  ChangePassword(password : String!) : MutationStatus! @auth
 
   SendActivation(id: ID!): MutationStatus!
   Activate(id: ID!): MutationStatus!
+
+  Block(userId : ID!) : User!
+  UnBlock(userId : ID!) : User!
 
   Follow(id1: ID!, id2: ID!): MutationStatus!
   UnFollow(id1: ID!, id2: ID!): MutationStatus!
@@ -163,7 +164,6 @@ extend type Mutation {
   AcceptConnectRequest(id1: ID!, id2: ID!): MutationStatus!
   UnConnect(id1: ID!, id2: ID!): MutationStatus!
 
-  SendMessage(input : InputMessage!): MutationStatus!
 
   Visit(id: ID!): MutationStatus! @auth
   VisitByLink(ProfileLink: String!): MutationStatus! @auth
@@ -179,11 +179,7 @@ extend type Mutation {
   AddJob(Text : String!) : MutationStatus! @auth
 }
 
-input InputMessage {
-  Text : String!
-  User1Id : String!
-  User2Id : String!
-}
+
 
 input InputExperience {
   Position: String!

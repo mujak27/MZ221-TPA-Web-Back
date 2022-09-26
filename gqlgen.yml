@@ -70,4 +70,6 @@ models:
     model: MZ221-TPA-Web-Back/graph/model.User
   Search:
     model: MZ221-TPA-Web-Back/graph/model.Search
+  Message:
+    model: MZ221-TPA-Web-Back/graph/model.Message
 

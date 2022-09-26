@@ -10,7 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
+	"log"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
@@ -25,6 +25,16 @@ func (r *activationResolver) User(ctx context.Context, obj *model.Activation) (*
 // User is the resolver for the User field.
 func (r *activityResolver) User(ctx context.Context, obj *model.Activity) (*model.User, error) {
 	return UserById(r.Resolver, obj.UserId)
+}
+
+// User1 is the resolver for the User1 field.
+func (r *blockResolver) User1(ctx context.Context, obj *model.Block) (*model.User, error) {
+	return UserById(r.Resolver, obj.User1.ID)
+}
+
+// User2 is the resolver for the User2 field.
+func (r *blockResolver) User2(ctx context.Context, obj *model.Block) (*model.User, error) {
+	return UserById(r.Resolver, obj.User2.ID)
 }
 
 // User1 is the resolver for the User1 field.
@@ -52,21 +62,6 @@ func (r *jobResolver) User(ctx context.Context, obj *model.Job) (*model.User, er
 	return UserById(r.Resolver, obj.UserId)
 }
 
-// User1 is the resolver for the User1 field.
-func (r *messageResolver) User1(ctx context.Context, obj *model.Message) (*model.User, error) {
-	return UserById(r.Resolver, obj.User1Id)
-}
-
-// User2 is the resolver for the User2 field.
-func (r *messageResolver) User2(ctx context.Context, obj *model.Message) (*model.User, error) {
-	return UserById(r.Resolver, obj.User2Id)
-}
-
-// CreatedAt is the resolver for the CreatedAt field.
-func (r *messageResolver) CreatedAt(ctx context.Context, obj *model.Message) (string, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
 // LoginRegisWithSso is the resolver for the LoginRegisWithSSO field.
 func (r *mutationResolver) LoginRegisWithSso(ctx context.Context, googleToken string) (string, error) {
 	tokenValue, _ := jwt.Parse(googleToken, nil)
@@ -91,12 +86,16 @@ func (r *mutationResolver) LoginRegisWithSso(ctx context.Context, googleToken st
 	}
 
 	var user *model.User
-	if err := r.DB.Find(&user, "email = ?", email).Error; err == nil {
+	err := r.DB.First(&user, "email = ?", email).Error
+	log.Println(user)
+	log.Println(err)
+	if user.ID == "" {
 		fmt.Println("not found")
 		user = &model.User{
-			ID:              uuid.NewString(),
-			Email:           email,
-			Password:        "",
+			ID:       uuid.NewString(),
+			Email:    email,
+			Password: "",
+
 			FirstName:       firstName,
 			LastName:        lastName,
 			MidName:         "",
@@ -230,8 +229,8 @@ func (r *mutationResolver) FirstUpdateProfile(ctx context.Context, input model.I
 func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.InputUser) (model.MutationStatus, error) {
 	myId := getId(ctx)
 
-	user, err := UserByProfileLink(r.Resolver, input.ProfileLink)
-	if err == nil {
+	user, err := UserByProfileLink(ctx, r.Resolver, input.ProfileLink)
+	if err == nil && user.ID != myId {
 		return model.MutationStatusError, errors.New("profile link already taken")
 	}
 	user, err = UserById(r.Resolver, myId)
@@ -259,7 +258,7 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.InputU
 func (r *mutationResolver) ForgetPassword(ctx context.Context, email string) (model.MutationStatus, error) {
 	var user *model.User
 	if err := r.DB.First(&user, "email = ?", email).Error; err != nil {
-		return model.MutationStatusNotFound, err
+		return model.MutationStatusNotFound, errors.New(string(model.MutationStatusNotFound))
 	}
 
 	reset := &model.Reset{
@@ -285,6 +284,7 @@ func (r *mutationResolver) ResetPassword(ctx context.Context, id string, passwor
 		return model.MutationStatusNotFound, err
 	}
 	user.Password = password
+	user.IsSso = false
 	r.DB.Save(user)
 	r.DB.Delete(reset)
 	return model.MutationStatusSuccess, nil
@@ -293,6 +293,20 @@ func (r *mutationResolver) ResetPassword(ctx context.Context, id string, passwor
 // FirstFillData is the resolver for the FirstFillData field.
 func (r *mutationResolver) FirstFillData(ctx context.Context, input model.InputUser) (model.MutationStatus, error) {
 	panic(fmt.Errorf("not implemented"))
+}
+
+// ChangePassword is the resolver for the ChangePassword field.
+func (r *mutationResolver) ChangePassword(ctx context.Context, password string) (model.MutationStatus, error) {
+	myId := getId(ctx)
+
+	user, _ := UserById(r.Resolver, myId)
+
+	user.IsSso = false
+	user.Password = password
+
+	r.DB.Save(user)
+
+	return model.MutationStatusSuccess, nil
 }
 
 // SendActivation is the resolver for the SendActivation field.
@@ -316,6 +330,35 @@ func (r *mutationResolver) Activate(ctx context.Context, id string) (model.Mutat
 	return model.MutationStatusSuccess, nil
 }
 
+// Block is the resolver for the Block field.
+func (r *mutationResolver) Block(ctx context.Context, userID string) (*model.User, error) {
+	myId := getId(ctx)
+	user, _ := UserById(r.Resolver, userID)
+	block := &model.Block{
+		ID:      uuid.NewString(),
+		User1Id: myId,
+		User2Id: userID,
+	}
+	r.blocks = append(r.blocks, block)
+	r.DB.Create(block)
+	return user, nil
+}
+
+// UnBlock is the resolver for the UnBlock field.
+func (r *mutationResolver) UnBlock(ctx context.Context, userID string) (*model.User, error) {
+	myId := getId(ctx)
+	user, _ := UserById(r.Resolver, userID)
+	var block *model.Block
+	if err := r.DB.First(&block, "user1_id = ? AND user2_id = ?", myId, userID).Error; err != nil {
+		return nil, err
+	}
+	r.blocks = lo.Filter[*model.Block](r.blocks, func(x *model.Block, _ int) bool {
+		return x.User1Id == myId && x.User2Id == userID
+	})
+	r.DB.Delete(block)
+	return user, nil
+}
+
 // Follow is the resolver for the Follow field.
 func (r *mutationResolver) Follow(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error) {
 	follow := &model.UserFollow{
@@ -326,6 +369,10 @@ func (r *mutationResolver) Follow(ctx context.Context, id1 string, id2 string) (
 	r.user_follows = append(r.user_follows, follow)
 	r.DB.Create(follow)
 
+	myUser, _ := UserById(r.Resolver, id1)
+
+	activityText := myUser.FirstName + " " + myUser.LastName + " has followed you"
+	AddActivity(r.Resolver, id2, activityText)
 	return model.MutationStatusSuccess, nil
 }
 
@@ -409,21 +456,6 @@ func (r *mutationResolver) UnConnect(ctx context.Context, id1 string, id2 string
 	return model.MutationStatusSuccess, nil
 }
 
-// SendMessage is the resolver for the SendMessage field.
-func (r *mutationResolver) SendMessage(ctx context.Context, input model.InputMessage) (model.MutationStatus, error) {
-	message := &model.Message{
-		ID:        uuid.NewString(),
-		Text:      input.Text,
-		User1Id:   input.User1Id,
-		User2Id:   input.User2Id,
-		CreatedAt: time.Time{},
-	}
-	r.messages = append(r.messages, message)
-	r.DB.Create(message)
-
-	return model.MutationStatusSuccess, nil
-}
-
 // Visit is the resolver for the Visit field.
 func (r *mutationResolver) Visit(ctx context.Context, id string) (model.MutationStatus, error) {
 	myId := auth.JwtGetValue(ctx).Userid
@@ -454,7 +486,7 @@ func (r *mutationResolver) Visit(ctx context.Context, id string) (model.Mutation
 func (r *mutationResolver) VisitByLink(ctx context.Context, profileLink string) (model.MutationStatus, error) {
 	myId := auth.JwtGetValue(ctx).Userid
 
-	user, err := UserByProfileLink(r.Resolver, profileLink)
+	user, err := UserByProfileLink(ctx, r.Resolver, profileLink)
 	if err != nil {
 		return model.MutationStatusError, errors.New("not found")
 	}
@@ -657,7 +689,16 @@ func (r *queryResolver) UsersByName(ctx context.Context, name *string, limit int
 
 // UserByLink is the resolver for the UserByLink field.
 func (r *queryResolver) UserByLink(ctx context.Context, link string) (*model.User, error) {
-	return UserByProfileLink(r.Resolver, link)
+	return UserByProfileLink(ctx, r.Resolver, link)
+}
+
+// IsEmailValid is the resolver for the isEmailValid field.
+func (r *queryResolver) IsEmailValid(ctx context.Context, email string) (bool, error) {
+	var user *model.User
+	if err := r.DB.First(&user, "email = ?", email).Error; err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // Activation is the resolver for the Activation field.
@@ -680,6 +721,16 @@ func (r *queryResolver) CheckReset(ctx context.Context, id string) (*model.User,
 		return nil, err
 	}
 	return user, nil
+}
+
+// IsBlock is the resolver for the IsBlock field.
+func (r *queryResolver) IsBlock(ctx context.Context, userID string) (bool, error) {
+	myId := getId(ctx)
+	var block *model.Block
+	if err := r.DB.First(&block, "user1_id = ? and user2_id = ?", myId, userID).Error; err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // IsFollow is the resolver for the IsFollow field.
@@ -758,15 +809,6 @@ func (r *queryResolver) Activities(ctx context.Context) ([]*model.Activity, erro
 		return nil, err
 	}
 	return activities, nil
-}
-
-// Messages is the resolver for the Messages field.
-func (r *queryResolver) Messages(ctx context.Context, id1 string, id2 string) ([]*model.Message, error) {
-	var messages []*model.Message
-	if err := r.DB.Find(&messages, "(user1_id = ? and user2_id = ?) or (user1_id = ? and user2_id = ?) order by created_at", id1, id2, id2, id1).Error; err != nil {
-		return nil, err
-	}
-	return messages, nil
 }
 
 // UsersSuggestion is the resolver for the UsersSuggestion field.
@@ -886,6 +928,9 @@ func (r *Resolver) Activation() generated.ActivationResolver { return &activatio
 // Activity returns generated.ActivityResolver implementation.
 func (r *Resolver) Activity() generated.ActivityResolver { return &activityResolver{r} }
 
+// Block returns generated.BlockResolver implementation.
+func (r *Resolver) Block() generated.BlockResolver { return &blockResolver{r} }
+
 // ConnectRequest returns generated.ConnectRequestResolver implementation.
 func (r *Resolver) ConnectRequest() generated.ConnectRequestResolver {
 	return &connectRequestResolver{r}
@@ -896,9 +941,6 @@ func (r *Resolver) Connection() generated.ConnectionResolver { return &connectio
 
 // Job returns generated.JobResolver implementation.
 func (r *Resolver) Job() generated.JobResolver { return &jobResolver{r} }
-
-// Message returns generated.MessageResolver implementation.
-func (r *Resolver) Message() generated.MessageResolver { return &messageResolver{r} }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
@@ -911,10 +953,10 @@ func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
 
 type activationResolver struct{ *Resolver }
 type activityResolver struct{ *Resolver }
+type blockResolver struct{ *Resolver }
 type connectRequestResolver struct{ *Resolver }
 type connectionResolver struct{ *Resolver }
 type jobResolver struct{ *Resolver }
-type messageResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type resetResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
