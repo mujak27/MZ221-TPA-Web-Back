@@ -195,7 +195,7 @@ func (r *mutationResolver) UnLikeComment(ctx context.Context, id string) (interf
 }
 
 // CommentPost is the resolver for the CommentPost field.
-func (r *mutationResolver) CommentPost(ctx context.Context, input *model.InputComment) (interface{}, error) {
+func (r *mutationResolver) CommentPost(ctx context.Context, input *model.InputComment) (*model.Comment, error) {
 	myId := getId(ctx)
 
 	log.Println("comment post")
@@ -239,9 +239,10 @@ func (r *mutationResolver) CommentPost(ctx context.Context, input *model.InputCo
 	}
 	r.comments = append(r.comments, comment)
 	if err := r.DB.Create(comment).Error; err != nil {
-		return map[string]interface{}{
-			"status": "failed",
-		}, err
+		// return map[string]interface{}{
+		// 	"status": "failed",
+		// }, err
+		return nil, err
 	}
 
 	log.Println(post.SenderId)
@@ -250,9 +251,10 @@ func (r *mutationResolver) CommentPost(ctx context.Context, input *model.InputCo
 		AddActivity(r.Resolver, post.SenderId, activity)
 	}
 
-	return map[string]interface{}{
-		"status": "success",
-	}, nil
+	// return map[string]interface{}{
+	// 	"status": "success",
+	// }, nil
+	return comment, nil
 }
 
 // Sender is the resolver for the Sender field.
@@ -306,8 +308,6 @@ func (r *queryResolver) Post(ctx context.Context, id string) (*model.Post, error
 
 // Posts is the resolver for the Posts field.
 func (r *queryResolver) Posts(ctx context.Context, limit int, offset int) ([]*model.Post, error) {
-	fmt.Println(limit, offset)
-
 	idList, err := getFriendIds(r.Resolver, ctx)
 	if err != nil {
 		return nil, err
@@ -337,7 +337,7 @@ func (r *queryResolver) PostsByKeyword(ctx context.Context, keyword string, limi
 	}
 
 	var posts []*model.Post
-	if err := r.DB.Limit(limit).Offset(offset).Find(&posts, "sender_id IN ? and text like ?", idList, "%"+keyword+"%").Error; err != nil {
+	if err := r.DB.Order("created_at desc").Limit(limit).Offset(offset).Find(&posts, "sender_id IN ? and text like ?", idList, "%"+keyword+"%").Error; err != nil {
 		return nil, err
 	}
 
@@ -355,15 +355,15 @@ func (r *queryResolver) Comment(ctx context.Context, id string) (*model.Comment,
 }
 
 // Comments is the resolver for the Comments field.
-func (r *queryResolver) Comments(ctx context.Context, commentID *string, postID string) ([]*model.Comment, error) {
+func (r *queryResolver) Comments(ctx context.Context, commentID *string, postID string, limit int, offset int) ([]*model.Comment, error) {
 	var comments []*model.Comment
 	var err error
 	if commentID != nil {
-		if err = r.DB.Find(&comments, "replied_to_id = ?", commentID).Error; err != nil {
+		if err = r.DB.Order("created_at desc").Limit(limit).Offset(offset).Find(&comments, "replied_to_id = ?", commentID).Error; err != nil {
 			return nil, err
 		}
 	} else {
-		if err = r.DB.Find(&comments, "replied_to_id is NULL and post_id = ?", postID).Error; err != nil {
+		if err = r.DB.Order("created_at desc").Limit(limit).Offset(offset).Find(&comments, "replied_to_id is NULL and post_id = ?", postID).Error; err != nil {
 			return nil, err
 		}
 	}

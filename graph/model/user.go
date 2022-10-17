@@ -127,6 +127,7 @@ type ConnectRequest struct {
 	User1   *User  `json:"User1"`
 	User2ID string `gorm:"type:varchar(191);constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	User2   *User  `json:"User2"`
+	Text    string `json:"Text"`
 }
 
 type InputLogin struct {

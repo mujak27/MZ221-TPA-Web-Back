@@ -88,6 +88,7 @@ type ComplexityRoot struct {
 
 	ConnectRequest struct {
 		ID    func(childComplexity int) int
+		Text  func(childComplexity int) int
 		User1 func(childComplexity int) int
 		User2 func(childComplexity int) int
 	}
@@ -154,13 +155,14 @@ type ComplexityRoot struct {
 		LikePost             func(childComplexity int, id string) int
 		Login                func(childComplexity int, input model.InputLogin) int
 		LoginRegisWithSso    func(childComplexity int, googleToken string) int
+		MutationTestSubs     func(childComplexity int, str string) int
 		OfferCandidates      func(childComplexity int, id string, input model.InputCandidates) int
 		Register             func(childComplexity int, input *model.InputRegister) int
 		RemoveEducation      func(childComplexity int, id string) int
 		RemoveExperience     func(childComplexity int, id string) int
 		ResetPassword        func(childComplexity int, id string, password string) int
 		SendActivation       func(childComplexity int, id string) int
-		SendConnectRequest   func(childComplexity int, id1 string, id2 string) int
+		SendConnectRequest   func(childComplexity int, id string, text string) int
 		SendMessage          func(childComplexity int, input model.InputMessage) int
 		UnBlock              func(childComplexity int, userID string) int
 		UnConnect            func(childComplexity int, id1 string, id2 string) int
@@ -190,7 +192,7 @@ type ComplexityRoot struct {
 		Activities        func(childComplexity int) int
 		CheckReset        func(childComplexity int, id string) int
 		Comment           func(childComplexity int, id string) int
-		Comments          func(childComplexity int, commentID *string, postID string) int
+		Comments          func(childComplexity int, commentID *string, postID string, limit int, offset int) int
 		ConnectedUsers    func(childComplexity int) int
 		ConnectionRequest func(childComplexity int) int
 		CountPost         func(childComplexity int, keyword *string) int
@@ -227,7 +229,13 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		GetMessages func(childComplexity int, id string) int
+		GetMessages   func(childComplexity int, id string) int
+		SubscribeTest func(childComplexity int) int
+	}
+
+	TypeConnection struct {
+		ConnectionStatus func(childComplexity int) int
+		Text             func(childComplexity int) int
 	}
 
 	User struct {
@@ -305,7 +313,7 @@ type MutationResolver interface {
 	UnLikePost(ctx context.Context, id string) (interface{}, error)
 	LikeComment(ctx context.Context, id string) (interface{}, error)
 	UnLikeComment(ctx context.Context, id string) (interface{}, error)
-	CommentPost(ctx context.Context, input *model.InputComment) (interface{}, error)
+	CommentPost(ctx context.Context, input *model.InputComment) (*model.Comment, error)
 	LoginRegisWithSso(ctx context.Context, googleToken string) (string, error)
 	Login(ctx context.Context, input model.InputLogin) (string, error)
 	Register(ctx context.Context, input *model.InputRegister) (string, error)
@@ -321,7 +329,7 @@ type MutationResolver interface {
 	UnBlock(ctx context.Context, userID string) (*model.User, error)
 	Follow(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
 	UnFollow(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
-	SendConnectRequest(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
+	SendConnectRequest(ctx context.Context, id string, text string) (model.MutationStatus, error)
 	DeleteConnectRequest(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
 	AcceptConnectRequest(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
 	UnConnect(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error)
@@ -337,6 +345,7 @@ type MutationResolver interface {
 	OfferCandidates(ctx context.Context, id string, input model.InputCandidates) (interface{}, error)
 	AnswerCandidates(ctx context.Context, id string, input model.InputCandidates) (interface{}, error)
 	HangUp(ctx context.Context, id string) (interface{}, error)
+	MutationTestSubs(ctx context.Context, str string) (string, error)
 }
 type PostResolver interface {
 	Sender(ctx context.Context, obj *model.Post) (*model.User, error)
@@ -355,8 +364,8 @@ type QueryResolver interface {
 	CheckReset(ctx context.Context, id string) (*model.User, error)
 	IsBlock(ctx context.Context, userID string) (bool, error)
 	IsFollow(ctx context.Context, id1 string, id2 string) (bool, error)
-	IsConnect(ctx context.Context, id1 string, id2 string) (model.ConnectStatus, error)
-	ConnectionRequest(ctx context.Context) ([]*model.User, error)
+	IsConnect(ctx context.Context, id1 string, id2 string) (*model.TypeConnection, error)
+	ConnectionRequest(ctx context.Context) ([]*model.ConnectRequest, error)
 	ConnectedUsers(ctx context.Context) ([]*model.User, error)
 	Activities(ctx context.Context) ([]*model.Activity, error)
 	UsersSuggestion(ctx context.Context) ([]*model.User, error)
@@ -370,7 +379,7 @@ type QueryResolver interface {
 	PostsByUserID(ctx context.Context, id string) ([]*model.Post, error)
 	PostsByKeyword(ctx context.Context, keyword string, limit int, offset int) ([]*model.Post, error)
 	Comment(ctx context.Context, id string) (*model.Comment, error)
-	Comments(ctx context.Context, commentID *string, postID string) ([]*model.Comment, error)
+	Comments(ctx context.Context, commentID *string, postID string, limit int, offset int) ([]*model.Comment, error)
 	IsLikePost(ctx context.Context, id string) (bool, error)
 	IsLikeComment(ctx context.Context, id string) (bool, error)
 	VideoCallStatus(ctx context.Context, id string) (model.VideoCallStatus, error)
@@ -384,6 +393,7 @@ type SearchResolver interface {
 }
 type SubscriptionResolver interface {
 	GetMessages(ctx context.Context, id string) (<-chan []*model.Message, error)
+	SubscribeTest(ctx context.Context) (<-chan *model.VideoCall, error)
 }
 type UserResolver interface {
 	Visits(ctx context.Context, obj *model.User) ([]*model.User, error)
@@ -518,6 +528,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ConnectRequest.ID(childComplexity), true
+
+	case "ConnectRequest.Text":
+		if e.complexity.ConnectRequest.Text == nil {
+			break
+		}
+
+		return e.complexity.ConnectRequest.Text(childComplexity), true
 
 	case "ConnectRequest.User1":
 		if e.complexity.ConnectRequest.User1 == nil {
@@ -960,6 +977,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.LoginRegisWithSso(childComplexity, args["GoogleToken"].(string)), true
 
+	case "Mutation.mutationTestSubs":
+		if e.complexity.Mutation.MutationTestSubs == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_mutationTestSubs_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MutationTestSubs(childComplexity, args["str"].(string)), true
+
 	case "Mutation.OfferCandidates":
 		if e.complexity.Mutation.OfferCandidates == nil {
 			break
@@ -1042,7 +1071,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SendConnectRequest(childComplexity, args["id1"].(string), args["id2"].(string)), true
+		return e.complexity.Mutation.SendConnectRequest(childComplexity, args["id"].(string), args["text"].(string)), true
 
 	case "Mutation.SendMessage":
 		if e.complexity.Mutation.SendMessage == nil {
@@ -1290,7 +1319,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Comments(childComplexity, args["CommentId"].(*string), args["PostId"].(string)), true
+		return e.complexity.Query.Comments(childComplexity, args["CommentId"].(*string), args["PostId"].(string), args["Limit"].(int), args["Offset"].(int)), true
 
 	case "Query.ConnectedUsers":
 		if e.complexity.Query.ConnectedUsers == nil {
@@ -1443,7 +1472,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Posts(childComplexity, args["Limit"].(int), args["Offset"].(int)), true
+		return e.complexity.Query.Posts(childComplexity, args["limit"].(int), args["offset"].(int)), true
 
 	case "Query.PostsByKeyword":
 		if e.complexity.Query.PostsByKeyword == nil {
@@ -1582,6 +1611,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.GetMessages(childComplexity, args["id"].(string)), true
+
+	case "Subscription.subscribeTest":
+		if e.complexity.Subscription.SubscribeTest == nil {
+			break
+		}
+
+		return e.complexity.Subscription.SubscribeTest(childComplexity), true
+
+	case "TypeConnection.connectionStatus":
+		if e.complexity.TypeConnection.ConnectionStatus == nil {
+			break
+		}
+
+		return e.complexity.TypeConnection.ConnectionStatus(childComplexity), true
+
+	case "TypeConnection.text":
+		if e.complexity.TypeConnection.Text == nil {
+			break
+		}
+
+		return e.complexity.TypeConnection.Text(childComplexity), true
 
 	case "User.About":
 		if e.complexity.User.About == nil {
@@ -1869,6 +1919,7 @@ extend type Query{
   text
   videoCall
   post
+  user
 }
 
 # user 1 sends to user 2
@@ -1941,12 +1992,12 @@ extend type Query {
   CountPost(Keyword : String):Int! @auth
 
   Post(id: ID!): Post!
-  Posts(Limit:Int!, Offset:Int!): [Post!]! @auth
+  Posts(limit:Int!, offset:Int!): [Post!]! @auth
   PostsByUserId(id: ID!): [Post!]! @auth
   PostsByKeyword(Keyword : String!,, Limit: Int!, Offset:Int!):[Post!]!
 
   Comment(id : ID!): Comment!
-  Comments(CommentId: ID, PostId : ID!): [Comment!]!
+  Comments(CommentId: ID, PostId : ID!, Limit:Int!, Offset:Int!): [Comment!]!
   IsLikePost(id : ID!) : Boolean!
   IsLikeComment(id : ID!) : Boolean!
 }
@@ -1961,7 +2012,7 @@ extend type Mutation {
   UnLikePost(id: ID!): Any! @auth
   LikeComment(id: ID!): Any! @auth
   UnLikeComment(id: ID!): Any! @auth
-  CommentPost(input : InputComment):Any! @auth
+  CommentPost(input : InputComment):Comment! @auth
 }
 
 input InputPost {
@@ -1994,6 +2045,11 @@ enum MutationStatus {
   NotFound
   AlreadyExist
   Error
+}
+
+type TypeConnection {
+  connectionStatus : ConnectStatus!
+  text : String!
 }
 
 
@@ -2086,6 +2142,7 @@ type ConnectRequest {
   ID : ID!
   User1 : User! @goField(forceResolver: true)
   User2 : User! @goField(forceResolver: true)
+  Text : String! 
 }
 
 type Query {
@@ -2104,8 +2161,9 @@ type Query {
 
   IsBlock(userId : ID!) : Boolean!
   IsFollow(id1:ID!, id2:ID!) : Boolean!
-  IsConnect(id1:ID!, id2:ID!) : ConnectStatus!
-  ConnectionRequest : [User!]!
+  IsConnect(id1:ID!, id2:ID!) : TypeConnection!
+
+  ConnectionRequest : [ConnectRequest!]!
   ConnectedUsers : [User!]! @auth
   Activities : [Activity!]! @auth
 
@@ -2137,7 +2195,7 @@ extend type Mutation {
   Follow(id1: ID!, id2: ID!): MutationStatus!
   UnFollow(id1: ID!, id2: ID!): MutationStatus!
 
-  SendConnectRequest(id1: ID!, id2: ID!): MutationStatus!
+  SendConnectRequest(id: ID!, text : String!): MutationStatus! @auth
   DeleteConnectRequest(id1: ID!, id2: ID!): MutationStatus!
   AcceptConnectRequest(id1: ID!, id2: ID!): MutationStatus!
   UnConnect(id1: ID!, id2: ID!): MutationStatus!
@@ -2231,6 +2289,12 @@ extend type Mutation {
   OfferCandidates(id : ID!, input : InputCandidates!) : Any!
   AnswerCandidates(id : ID!, input : InputCandidates!) : Any!
   HangUp(id : ID!) : Any!
+  mutationTestSubs(str : String!) : String!
+
+}
+
+extend type Subscription {
+  subscribeTest: VideoCall!
 }
 
 input InputCandidates {
@@ -2706,23 +2770,23 @@ func (ec *executionContext) field_Mutation_SendConnectRequest_args(ctx context.C
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["id1"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id1"))
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id1"] = arg0
+	args["id"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["id2"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id2"))
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+	if tmp, ok := rawArgs["text"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("text"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id2"] = arg1
+	args["text"] = arg1
 	return args, nil
 }
 
@@ -2942,6 +3006,21 @@ func (ec *executionContext) field_Mutation_Visit_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_mutationTestSubs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["str"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("str"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["str"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_Activation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3008,6 +3087,24 @@ func (ec *executionContext) field_Query_Comments_args(ctx context.Context, rawAr
 		}
 	}
 	args["PostId"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["Limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Limit"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Limit"] = arg2
+	var arg3 int
+	if tmp, ok := rawArgs["Offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Offset"))
+		arg3, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Offset"] = arg3
 	return args, nil
 }
 
@@ -3225,23 +3322,23 @@ func (ec *executionContext) field_Query_Posts_args(ctx context.Context, rawArgs 
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
-	if tmp, ok := rawArgs["Limit"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Limit"))
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
 		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["Limit"] = arg0
+	args["limit"] = arg0
 	var arg1 int
-	if tmp, ok := rawArgs["Offset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Offset"))
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
 		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["Offset"] = arg1
+	args["offset"] = arg1
 	return args, nil
 }
 
@@ -4594,6 +4691,50 @@ func (ec *executionContext) fieldContext_ConnectRequest_User2(ctx context.Contex
 				return ec.fieldContext_User_HasFilledData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ConnectRequest_Text(ctx context.Context, field graphql.CollectedField, obj *model.ConnectRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ConnectRequest_Text(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Text, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ConnectRequest_Text(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ConnectRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6502,10 +6643,10 @@ func (ec *executionContext) _Mutation_CommentPost(ctx context.Context, field gra
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(interface{}); ok {
+		if data, ok := tmp.(*model.Comment); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be interface{}`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *MZ221-TPA-Web-Back/graph/model.Comment`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6517,9 +6658,9 @@ func (ec *executionContext) _Mutation_CommentPost(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(interface{})
+	res := resTmp.(*model.Comment)
 	fc.Result = res
-	return ec.marshalNAny2interface(ctx, field.Selections, res)
+	return ec.marshalNComment2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐComment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_CommentPost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6529,7 +6670,23 @@ func (ec *executionContext) fieldContext_Mutation_CommentPost(ctx context.Contex
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Any does not have child fields")
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_Comment_ID(ctx, field)
+			case "Text":
+				return ec.fieldContext_Comment_Text(ctx, field)
+			case "Post":
+				return ec.fieldContext_Comment_Post(ctx, field)
+			case "Sender":
+				return ec.fieldContext_Comment_Sender(ctx, field)
+			case "Replies":
+				return ec.fieldContext_Comment_Replies(ctx, field)
+			case "Likes":
+				return ec.fieldContext_Comment_Likes(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_Comment_CreatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
 	}
 	defer func() {
@@ -7488,8 +7645,28 @@ func (ec *executionContext) _Mutation_SendConnectRequest(ctx context.Context, fi
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SendConnectRequest(rctx, fc.Args["id1"].(string), fc.Args["id2"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().SendConnectRequest(rctx, fc.Args["id"].(string), fc.Args["text"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(model.MutationStatus); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be MZ221-TPA-Web-Back/graph/model.MutationStatus`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8529,6 +8706,61 @@ func (ec *executionContext) fieldContext_Mutation_HangUp(ctx context.Context, fi
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_HangUp_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_mutationTestSubs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_mutationTestSubs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().MutationTestSubs(rctx, fc.Args["str"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_mutationTestSubs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_mutationTestSubs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -9655,9 +9887,9 @@ func (ec *executionContext) _Query_IsConnect(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.ConnectStatus)
+	res := resTmp.(*model.TypeConnection)
 	fc.Result = res
-	return ec.marshalNConnectStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐConnectStatus(ctx, field.Selections, res)
+	return ec.marshalNTypeConnection2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐTypeConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_IsConnect(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9667,7 +9899,13 @@ func (ec *executionContext) fieldContext_Query_IsConnect(ctx context.Context, fi
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ConnectStatus does not have child fields")
+			switch field.Name {
+			case "connectionStatus":
+				return ec.fieldContext_TypeConnection_connectionStatus(ctx, field)
+			case "text":
+				return ec.fieldContext_TypeConnection_text(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TypeConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -9710,9 +9948,9 @@ func (ec *executionContext) _Query_ConnectionRequest(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.User)
+	res := resTmp.([]*model.ConnectRequest)
 	fc.Result = res
-	return ec.marshalNUser2ᚕᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
+	return ec.marshalNConnectRequest2ᚕᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐConnectRequestᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_ConnectionRequest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9724,47 +9962,15 @@ func (ec *executionContext) fieldContext_Query_ConnectionRequest(ctx context.Con
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "ID":
-				return ec.fieldContext_User_ID(ctx, field)
-			case "Email":
-				return ec.fieldContext_User_Email(ctx, field)
-			case "Password":
-				return ec.fieldContext_User_Password(ctx, field)
-			case "FirstName":
-				return ec.fieldContext_User_FirstName(ctx, field)
-			case "LastName":
-				return ec.fieldContext_User_LastName(ctx, field)
-			case "MidName":
-				return ec.fieldContext_User_MidName(ctx, field)
-			case "IsActive":
-				return ec.fieldContext_User_IsActive(ctx, field)
-			case "ProfilePhoto":
-				return ec.fieldContext_User_ProfilePhoto(ctx, field)
-			case "BackgroundPhoto":
-				return ec.fieldContext_User_BackgroundPhoto(ctx, field)
-			case "Headline":
-				return ec.fieldContext_User_Headline(ctx, field)
-			case "Pronoun":
-				return ec.fieldContext_User_Pronoun(ctx, field)
-			case "ProfileLink":
-				return ec.fieldContext_User_ProfileLink(ctx, field)
-			case "About":
-				return ec.fieldContext_User_About(ctx, field)
-			case "Location":
-				return ec.fieldContext_User_Location(ctx, field)
-			case "Visits":
-				return ec.fieldContext_User_Visits(ctx, field)
-			case "Follows":
-				return ec.fieldContext_User_Follows(ctx, field)
-			case "Experiences":
-				return ec.fieldContext_User_Experiences(ctx, field)
-			case "Educations":
-				return ec.fieldContext_User_Educations(ctx, field)
-			case "IsSso":
-				return ec.fieldContext_User_IsSso(ctx, field)
-			case "HasFilledData":
-				return ec.fieldContext_User_HasFilledData(ctx, field)
+				return ec.fieldContext_ConnectRequest_ID(ctx, field)
+			case "User1":
+				return ec.fieldContext_ConnectRequest_User1(ctx, field)
+			case "User2":
+				return ec.fieldContext_ConnectRequest_User2(ctx, field)
+			case "Text":
+				return ec.fieldContext_ConnectRequest_Text(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ConnectRequest", field.Name)
 		},
 	}
 	return fc, nil
@@ -10479,7 +10685,7 @@ func (ec *executionContext) _Query_Posts(ctx context.Context, field graphql.Coll
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Posts(rctx, fc.Args["Limit"].(int), fc.Args["Offset"].(int))
+			return ec.resolvers.Query().Posts(rctx, fc.Args["limit"].(int), fc.Args["offset"].(int))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.Auth == nil {
@@ -10802,7 +11008,7 @@ func (ec *executionContext) _Query_Comments(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Comments(rctx, fc.Args["CommentId"].(*string), fc.Args["PostId"].(string))
+		return ec.resolvers.Query().Comments(rctx, fc.Args["CommentId"].(*string), fc.Args["PostId"].(string), fc.Args["Limit"].(int), fc.Args["Offset"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11510,6 +11716,164 @@ func (ec *executionContext) fieldContext_Subscription_getMessages(ctx context.Co
 	if fc.Args, err = ec.field_Subscription_getMessages_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Subscription_subscribeTest(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
+	fc, err := ec.fieldContext_Subscription_subscribeTest(ctx, field)
+	if err != nil {
+		return nil
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().SubscribeTest(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func(ctx context.Context) graphql.Marshaler {
+		select {
+		case res, ok := <-resTmp.(<-chan *model.VideoCall):
+			if !ok {
+				return nil
+			}
+			return graphql.WriterFunc(func(w io.Writer) {
+				w.Write([]byte{'{'})
+				graphql.MarshalString(field.Alias).MarshalGQL(w)
+				w.Write([]byte{':'})
+				ec.marshalNVideoCall2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐVideoCall(ctx, field.Selections, res).MarshalGQL(w)
+				w.Write([]byte{'}'})
+			})
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+func (ec *executionContext) fieldContext_Subscription_subscribeTest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_VideoCall_ID(ctx, field)
+			case "User1":
+				return ec.fieldContext_VideoCall_User1(ctx, field)
+			case "User2":
+				return ec.fieldContext_VideoCall_User2(ctx, field)
+			case "OfferCandidates":
+				return ec.fieldContext_VideoCall_OfferCandidates(ctx, field)
+			case "AnswerCandidates":
+				return ec.fieldContext_VideoCall_AnswerCandidates(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type VideoCall", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TypeConnection_connectionStatus(ctx context.Context, field graphql.CollectedField, obj *model.TypeConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TypeConnection_connectionStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConnectionStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ConnectStatus)
+	fc.Result = res
+	return ec.marshalNConnectStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐConnectStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TypeConnection_connectionStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TypeConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ConnectStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TypeConnection_text(ctx context.Context, field graphql.CollectedField, obj *model.TypeConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TypeConnection_text(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Text, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TypeConnection_text(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TypeConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -15474,6 +15838,13 @@ func (ec *executionContext) _ConnectRequest(ctx context.Context, sel ast.Selecti
 				return innerFunc(ctx)
 
 			})
+		case "Text":
+
+			out.Values[i] = ec._ConnectRequest_Text(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16211,6 +16582,15 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_HangUp(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "mutationTestSubs":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_mutationTestSubs(ctx, field)
 			})
 
 			if out.Values[i] == graphql.Null {
@@ -17156,9 +17536,46 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	switch fields[0].Name {
 	case "getMessages":
 		return ec._Subscription_getMessages(ctx, fields[0])
+	case "subscribeTest":
+		return ec._Subscription_subscribeTest(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
+}
+
+var typeConnectionImplementors = []string{"TypeConnection"}
+
+func (ec *executionContext) _TypeConnection(ctx context.Context, sel ast.SelectionSet, obj *model.TypeConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, typeConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TypeConnection")
+		case "connectionStatus":
+
+			out.Values[i] = ec._TypeConnection_connectionStatus(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "text":
+
+			out.Values[i] = ec._TypeConnection_text(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
 }
 
 var userImplementors = []string{"User"}
@@ -17910,6 +18327,60 @@ func (ec *executionContext) marshalNComment2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraph�
 	return ec._Comment(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNConnectRequest2ᚕᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐConnectRequestᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ConnectRequest) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNConnectRequest2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐConnectRequest(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNConnectRequest2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐConnectRequest(ctx context.Context, sel ast.SelectionSet, v *model.ConnectRequest) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ConnectRequest(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNConnectStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐConnectStatus(ctx context.Context, v interface{}) (model.ConnectStatus, error) {
 	var res model.ConnectStatus
 	err := res.UnmarshalGQL(v)
@@ -18335,6 +18806,20 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	return ret
 }
 
+func (ec *executionContext) marshalNTypeConnection2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐTypeConnection(ctx context.Context, sel ast.SelectionSet, v model.TypeConnection) graphql.Marshaler {
+	return ec._TypeConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTypeConnection2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐTypeConnection(ctx context.Context, sel ast.SelectionSet, v *model.TypeConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TypeConnection(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNUser2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
 }
@@ -18391,6 +18876,20 @@ func (ec *executionContext) marshalNUser2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋm
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNVideoCall2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐVideoCall(ctx context.Context, sel ast.SelectionSet, v model.VideoCall) graphql.Marshaler {
+	return ec._VideoCall(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNVideoCall2ᚖMZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐVideoCall(ctx context.Context, sel ast.SelectionSet, v *model.VideoCall) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._VideoCall(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNVideoCallStatus2MZ221ᚑTPAᚑWebᚑBackᚋgraphᚋmodelᚐVideoCallStatus(ctx context.Context, v interface{}) (model.VideoCallStatus, error) {

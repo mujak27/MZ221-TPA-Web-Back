@@ -22,6 +22,12 @@ extend type Mutation {
   OfferCandidates(id : ID!, input : InputCandidates!) : Any!
   AnswerCandidates(id : ID!, input : InputCandidates!) : Any!
   HangUp(id : ID!) : Any!
+  mutationTestSubs(str : String!) : String!
+
+}
+
+extend type Subscription {
+  subscribeTest: VideoCall!
 }
 
 input InputCandidates {

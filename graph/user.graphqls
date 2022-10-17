@@ -18,6 +18,11 @@ enum MutationStatus {
   Error
 }
 
+type TypeConnection {
+  connectionStatus : ConnectStatus!
+  text : String!
+}
+
 
 
 type Experience {
@@ -108,6 +113,7 @@ type ConnectRequest {
   ID : ID!
   User1 : User! @goField(forceResolver: true)
   User2 : User! @goField(forceResolver: true)
+  Text : String! 
 }
 
 type Query {
@@ -126,8 +132,9 @@ type Query {
 
   IsBlock(userId : ID!) : Boolean!
   IsFollow(id1:ID!, id2:ID!) : Boolean!
-  IsConnect(id1:ID!, id2:ID!) : ConnectStatus!
-  ConnectionRequest : [User!]!
+  IsConnect(id1:ID!, id2:ID!) : TypeConnection!
+
+  ConnectionRequest : [ConnectRequest!]!
   ConnectedUsers : [User!]! @auth
   Activities : [Activity!]! @auth
 
@@ -159,7 +166,7 @@ extend type Mutation {
   Follow(id1: ID!, id2: ID!): MutationStatus!
   UnFollow(id1: ID!, id2: ID!): MutationStatus!
 
-  SendConnectRequest(id1: ID!, id2: ID!): MutationStatus!
+  SendConnectRequest(id: ID!, text : String!): MutationStatus! @auth
   DeleteConnectRequest(id1: ID!, id2: ID!): MutationStatus!
   AcceptConnectRequest(id1: ID!, id2: ID!): MutationStatus!
   UnConnect(id1: ID!, id2: ID!): MutationStatus!

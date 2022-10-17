@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 )
 
 // User1 is the resolver for the User1 field.
@@ -62,6 +63,12 @@ func (r *queryResolver) RecentMessage(ctx context.Context) ([]*model.Message, er
 		fmt.Println("error")
 		return nil, err
 	}
+
+	blockIds, _ := getBlockIds(r.Resolver, ctx)
+
+	messages = lo.Filter(messages, func(x *model.Message, _ int) bool {
+		return !lo.Contains(blockIds, x.User1Id) && !lo.Contains(blockIds, x.User2Id)
+	})
 
 	fmt.Println(messages)
 

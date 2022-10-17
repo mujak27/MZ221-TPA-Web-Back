@@ -4,8 +4,6 @@ type Search{
   Posts : [Post!]! @goField(forceResolver: true)
 }
 
-
-
 extend type Query{
   Search(Keyword : String!, Limit:Int!, Offset:Int!) : Search!
 }

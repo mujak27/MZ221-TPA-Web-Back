@@ -341,6 +341,14 @@ func (r *mutationResolver) Block(ctx context.Context, userID string) (*model.Use
 	}
 	r.blocks = append(r.blocks, block)
 	r.DB.Create(block)
+
+	r.UnFollow(ctx, myId, userID)
+	r.UnFollow(ctx, userID, myId)
+
+	r.UnConnect(ctx, userID, myId)
+	r.DeleteConnectRequest(ctx, userID, myId)
+	r.DeleteConnectRequest(ctx, myId, userID)
+
 	return user, nil
 }
 
@@ -390,7 +398,10 @@ func (r *mutationResolver) UnFollow(ctx context.Context, id1 string, id2 string)
 }
 
 // SendConnectRequest is the resolver for the SendConnectRequest field.
-func (r *mutationResolver) SendConnectRequest(ctx context.Context, id1 string, id2 string) (model.MutationStatus, error) {
+func (r *mutationResolver) SendConnectRequest(ctx context.Context, id string, text string) (model.MutationStatus, error) {
+	id1 := getId(ctx)
+	id2 := id
+
 	var connectRequest *model.ConnectRequest
 	err := r.DB.First(&connectRequest, "user1_id = ? and user2_id = ?", id1, id2).Error
 	if err == nil {
@@ -400,6 +411,7 @@ func (r *mutationResolver) SendConnectRequest(ctx context.Context, id1 string, i
 		ID:      uuid.NewString(),
 		User1ID: id1,
 		User2ID: id2,
+		Text:    text,
 	}
 
 	r.connectRequests = append(r.connectRequests, connectRequest)
@@ -682,8 +694,13 @@ func (r *queryResolver) UsersByName(ctx context.Context, name *string, limit int
 	if err := r.DB.Limit(limit).Offset(offset).Find(&users, "concat(first_name,mid_name,last_name) like ?", "%"+*name+"%").Error; err != nil {
 		return nil, err
 	}
-	fmt.Println(*name)
-	fmt.Println(users)
+
+	blockIds, _ := getBlockIds(r.Resolver, ctx)
+
+	users = lo.Filter(users, func(x *model.User, _ int) bool {
+		return !lo.Contains(blockIds, x.ID)
+	})
+
 	return users, nil
 }
 
@@ -746,31 +763,43 @@ func (r *queryResolver) IsFollow(ctx context.Context, id1 string, id2 string) (b
 }
 
 // IsConnect is the resolver for the IsConnect field.
-func (r *queryResolver) IsConnect(ctx context.Context, id1 string, id2 string) (model.ConnectStatus, error) {
+func (r *queryResolver) IsConnect(ctx context.Context, id1 string, id2 string) (*model.TypeConnection, error) {
 	sortedId1, sortedId2 := SortIdAsc(id1, id2)
 
 	var connection *model.Connection
 	err := r.DB.First(&connection, "user1_id = ? and user2_id = ?", sortedId1, sortedId2).Error
 	if err == nil {
-		return model.ConnectStatusConnected, nil
+		return &model.TypeConnection{
+			ConnectionStatus: model.ConnectStatusConnected,
+			Text:             "",
+		}, nil
 	}
 
 	var connectRequest *model.ConnectRequest
 	err = r.DB.First(&connectRequest, "user1_id = ? and user2_id = ?", id1, id2).Error
 	if err == nil {
-		return model.ConnectStatusSentByUser1, nil
+		return &model.TypeConnection{
+			ConnectionStatus: model.ConnectStatusSentByUser1,
+			Text:             connectRequest.Text,
+		}, nil
 	}
 
 	err = r.DB.First(&connectRequest, "user1_id = ? and user2_id = ?", id2, id1).Error
 	if err == nil {
-		return model.ConnectStatusSentByUser2, nil
+		return &model.TypeConnection{
+			ConnectionStatus: model.ConnectStatusSentByUser2,
+			Text:             connectRequest.Text,
+		}, nil
 	}
 
-	return model.ConnectStatusNotConnected, nil
+	return &model.TypeConnection{
+		ConnectionStatus: model.ConnectStatusNotConnected,
+		Text:             "",
+	}, nil
 }
 
 // ConnectionRequest is the resolver for the ConnectionRequest field.
-func (r *queryResolver) ConnectionRequest(ctx context.Context) ([]*model.User, error) {
+func (r *queryResolver) ConnectionRequest(ctx context.Context) ([]*model.ConnectRequest, error) {
 	myId := getId(ctx)
 
 	var connectRequests []*model.ConnectRequest
@@ -778,13 +807,8 @@ func (r *queryResolver) ConnectionRequest(ctx context.Context) ([]*model.User, e
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(connectRequests)
 
-	userIds := lo.Map[*model.ConnectRequest, string](connectRequests, func(x *model.ConnectRequest, _ int) string {
-		return x.User1ID
-	})
-	fmt.Println(userIds)
-	return UsersById(r.Resolver, userIds)
+	return connectRequests, nil
 }
 
 // ConnectedUsers is the resolver for the ConnectedUsers field.

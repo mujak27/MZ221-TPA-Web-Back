@@ -8,6 +8,10 @@ import (
 	"strconv"
 )
 
+type TypeConnection struct {
+	ConnectionStatus ConnectStatus `json:"connectionStatus"`
+	Text             string        `json:"text"`
+}
 
 type EnumMessageType string
 
@@ -15,17 +19,19 @@ const (
 	EnumMessageTypeText      EnumMessageType = "text"
 	EnumMessageTypeVideoCall EnumMessageType = "videoCall"
 	EnumMessageTypePost      EnumMessageType = "post"
+	EnumMessageTypeUser      EnumMessageType = "user"
 )
 
 var AllEnumMessageType = []EnumMessageType{
 	EnumMessageTypeText,
 	EnumMessageTypeVideoCall,
 	EnumMessageTypePost,
+	EnumMessageTypeUser,
 }
 
 func (e EnumMessageType) IsValid() bool {
 	switch e {
-	case EnumMessageTypeText, EnumMessageTypeVideoCall, EnumMessageTypePost:
+	case EnumMessageTypeText, EnumMessageTypeVideoCall, EnumMessageTypePost, EnumMessageTypeUser:
 		return true
 	}
 	return false

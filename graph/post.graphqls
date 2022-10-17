@@ -35,12 +35,12 @@ extend type Query {
   CountPost(Keyword : String):Int! @auth
 
   Post(id: ID!): Post!
-  Posts(Limit:Int!, Offset:Int!): [Post!]! @auth
+  Posts(limit:Int!, offset:Int!): [Post!]! @auth
   PostsByUserId(id: ID!): [Post!]! @auth
-  PostsByKeyword(Keyword : String!,, Limit: Int!, Offset:Int!):[Post!]!
+  PostsByKeyword(Keyword : String!, Limit: Int!, Offset:Int!):[Post!]!
 
   Comment(id : ID!): Comment!
-  Comments(CommentId: ID, PostId : ID!): [Comment!]!
+  Comments(CommentId: ID, PostId : ID!, Limit:Int!, Offset:Int!): [Comment!]!
   IsLikePost(id : ID!) : Boolean!
   IsLikeComment(id : ID!) : Boolean!
 }
@@ -50,12 +50,11 @@ extend type Mutation {
   UpdatePost(id: ID!): Post!
   DeletePost(id: ID!): Post!
 
-  # AddPostSender(id: ID!): Post!
   LikePost(id: ID!): Any! @auth
   UnLikePost(id: ID!): Any! @auth
   LikeComment(id: ID!): Any! @auth
   UnLikeComment(id: ID!): Any! @auth
-  CommentPost(input : InputComment):Any! @auth
+  CommentPost(input : InputComment):Comment! @auth
 }
 
 input InputPost {

@@ -2,6 +2,7 @@ enum enumMessageType {
   text
   videoCall
   post
+  user
 }
 
 # user 1 sends to user 2
